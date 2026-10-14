@@ -472,11 +472,12 @@ const safeUrl=u=>/^https?:\/\//i.test(u||'')?u:'';
 let lastY=null;document.addEventListener('pointerdown',e=>{lastY=e.pageY},true);
 /* When the page is shown inside a frame as tall as the whole page, "fixed" sits off-screen: pin pop-ups next to where you tapped instead. */
 const tallFrame=()=>{const h=document.documentElement.scrollHeight;return window.innerHeight>=h-4&&h>window.screen.height*1.2};
-function fitOverlay(ov){if(!ov||!tallFrame())return;const box=ov.firstElementChild;const h=document.documentElement.scrollHeight;
+function fitOverlay(ov){if(!ov)return;const box=ov.firstElementChild;const h=Math.max(document.documentElement.scrollHeight,document.body.scrollHeight);
   ov.style.position='absolute';ov.style.top='0';ov.style.left='0';ov.style.right='0';ov.style.bottom='auto';ov.style.height=h+'px';ov.style.alignItems='flex-start';
-  const y=Math.max(16,Math.min((lastY==null?200:lastY)-160,h-(box.offsetHeight||600)-16));box.style.marginTop=y+'px';box.style.maxHeight='none';}
+  box.style.maxHeight='none';box.style.overflow='visible';box.style.borderRadius='18px';
+  const want=lastY==null?window.scrollY+24:lastY-140;const y=Math.max(12,Math.min(want,h-(box.offsetHeight||600)-12));box.style.marginTop=y+'px';}
 function toast(msg){const r=$('#toastRoot');r.innerHTML='<div class="toast" role="status">'+esc(msg)+'</div>';const t=r.firstChild;
-  if(tallFrame()){t.style.position='absolute';t.style.bottom='auto';t.style.top=Math.max(16,(lastY==null?200:lastY)+40)+'px'}
+  t.style.position='absolute';t.style.bottom='auto';t.style.top=Math.max(16,(lastY==null?window.scrollY+80:lastY+30))+'px';
   clearTimeout(toast.t);toast.t=setTimeout(()=>r.innerHTML='',3200)}
 function store(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
 
