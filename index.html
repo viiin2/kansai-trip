@@ -500,7 +500,7 @@ const addBtn=(act,label)=>canWrite&&db?'<button class="btn" data-act="'+act+'">'
 /* ---------- renders ---------- */
 function renderPlan(){
   const el=$('#p-plan');
-  let html='<div class="panel-head"><div><div class="label">(01) Itinerary</div><h2>날짜별 일정</h2></div></div>';
+  let html='<div class="panel-head"><div><div class="label">Itinerary</div><h2>날짜별 일정</h2></div></div>';
   if(!S.days.length){html+='<div class="empty"><b>일정을 불러오는 중이에요</b>공유 저장소에 연결되면 11/18~11/25 하루별 일정이 여기에 나타나요.</div>';el.innerHTML=html;return}
   html+='<div class="days">'+S.days.map(d=>{
     const c=CITY[d.city]||CITY.move;
@@ -518,7 +518,7 @@ function renderPhoto(){
   if(UI.refTag!=='전체')list=list.filter(r=>(r.tags||[]).includes(UI.refTag));
   if(UI.refDay!=='전체')list=list.filter(r=>r.day===UI.refDay);
   const allT=new Set();S.refs.forEach(r=>(r.tags||[]).forEach(t=>allT.add(t)));const usedTags=TAGS.filter(t=>allT.has(t)).concat([...allT].filter(t=>!TAGS.includes(t)));
-  let html='<div class="panel-head"><div><div class="label">(02) Photo moodboard</div><h2>사진 레퍼런스</h2></div>'+addBtn('addRef','+ 레퍼런스 추가')+'</div>';
+  let html='<div class="panel-head"><div><div class="label">Photo moodboard</div><h2>사진 레퍼런스</h2></div>'+addBtn('addRef','+ 레퍼런스 추가')+'</div>';
   html+='<div class="filters"><div class="chips">'+['전체'].concat(usedTags).map(t=>'<button class="chip" aria-pressed="'+(UI.refTag===t)+'" data-act="refTag" data-v="'+esc(t)+'">'+esc(t)+'</button>').join('')+'</div>'+
   '<div class="chips">'+[{id:'전체',l:'모든 날'}].concat(S.days.map(d=>({id:d.id,l:d.date}))).map(d=>'<button class="chip" aria-pressed="'+(UI.refDay===d.id)+'" data-act="refDay" data-v="'+d.id+'"><span class="num">'+esc(d.l)+'</span></button>').join('')+'</div></div>';
   if(!list.length){html+='<div class="empty"><b>'+(S.refs.length?'이 조건에 맞는 사진이 없어요':'아직 레퍼런스가 없어요')+'</b>'+(S.refs.length?'다른 태그나 날짜를 골라보세요.':'"레퍼런스 추가"로 찍고 싶은 사진을 올려보세요.')+'</div>'}
@@ -531,7 +531,7 @@ function renderPhoto(){
 
 function renderOutfit(){
   const el=$('#p-outfit');
-  let html='<div class="panel-head"><div><div class="label">(03) Outfits</div><h2>날짜별 코디</h2></div></div>';
+  let html='<div class="panel-head"><div><div class="label">Outfits</div><h2>날짜별 코디</h2></div></div>';
   if(!S.days.length){html+='<div class="empty"><b>일정을 불러오는 중이에요</b>날짜가 생기면 수빈·언니 칸이 날짜마다 만들어져요.</div>';el.innerHTML=html;return}
   html+='<div class="otable">'+S.days.map(d=>{
     const cell=w=>{const items=S.outfits.filter(o=>o.day===d.id&&o.who===w);
@@ -551,7 +551,7 @@ function renderShop(){
   const want=S.shop.filter(x=>!x.bought), got=S.shop.filter(x=>x.bought);
   const sum=a=>a.reduce((s,x)=>s+(Number(x.price)||0)*(Number(x.qty)||1),0);
   const gotSum=sum(got), refund=sum(got.filter(x=>x.taxfree))*10/110;
-  let html='<div class="panel-head"><div><div class="label">(04) Shopping</div><h2>쇼핑 리스트</h2></div>'+addBtn('addShop','+ 아이템 저장')+'</div>';
+  let html='<div class="panel-head"><div><div class="label">Shopping</div><h2>쇼핑 리스트</h2></div>'+addBtn('addShop','+ 아이템 저장')+'</div>';
   html+='<div class="tally"><div><b class="num">'+want.length+'</b><span>살 것 · 예상 '+yen(sum(want))+'</span></div><div><b class="num">'+got.length+'</b><span>산 것</span></div><div><b class="num">'+yen(gotSum)+'</b><span>쓴 돈 (세금 포함)</span></div><div><b class="num">≈'+yen(refund)+'</b><span>공항 환급 예상 (대략)</span></div></div>';
   html+='<div class="filters"><div class="chips">'+['전체','찜','살 것','산 것'].map(v=>'<button class="chip" aria-pressed="'+(UI.shopView===v)+'" data-act="shopView" data-v="'+v+'">'+(v==='찜'?'♡ 찜':v)+'</button>').join('')+'</div><div class="chips">'+['전체'].concat(WHO).map(v=>'<button class="chip" aria-pressed="'+(UI.shopWho===v)+'" data-act="shopWho" data-v="'+v+'">'+(v==='전체'?'모두':v)+'</button>').join('')+'</div></div>';
   const w=canWrite&&db;
@@ -568,7 +568,7 @@ function renderShop(){
 }
 function renderTips(){
   const el=$('#p-tips');
-  let html='<div class="panel-head"><div><div class="label">(05) Saved tips</div><h2>꿀팁 스크랩</h2></div></div>';
+  let html='<div class="panel-head"><div><div class="label">Saved tips</div><h2>꿀팁 스크랩</h2></div></div>';
   if(canWrite&&db){
     html+='<div class="paste"><div class="field"><label for="tipText">꿀팁 원문 붙여넣기</label><textarea id="tipText" placeholder="예) 라피트는 난바에서 출발 40분 전에 가도 자리 있음, 클룩에서 사면 더 싸요..."></textarea></div>'+
     '<div class="field"><label for="tipLink">원문 링크 (선택)</label><input id="tipLink" type="url" placeholder="https://"></div>'+
