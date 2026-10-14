@@ -515,7 +515,7 @@ function renderPlan(){
     return '<article class="day"><div class="when"><span class="date">'+esc(d.date)+'</span><span class="dow">'+esc(d.dow)+'요일</span><span class="city '+c[1]+'">'+c[0]+'</span></div>'+
     '<div class="body"><h3>'+esc(d.title)+'</h3><ul class="stops">'+(d.stops||[]).map(s=>'<li><span class="t">'+esc(s.t||'')+'</span><span><span class="n">'+esc(s.name)+'</span>'+(s.note?' <span class="note">· '+esc(s.note)+'</span>':'')+'</span></li>').join('')+'</ul>'+
     (d.memo?'<div class="memo">'+esc(d.memo)+'</div>':'')+
-    '<div class="foot"><button class="linkish" data-act="goRefs" data-day="'+d.id+'">사진 레퍼런스 '+nr+'개</button><button class="linkish" data-act="goOutfit">코디 '+no+'개</button>'+(canWrite&&db?'<button class="mini" data-act="editDay" data-id="'+d.id+'" style="margin-left:auto">수정</button>':'')+'</div></div></article>'}).join('')+'</div>';
+    '<div class="foot"><button class="linkish" data-act="goOutfit">코디 '+no+'개</button>'+(canWrite&&db?'<button class="mini" data-act="editDay" data-id="'+d.id+'" style="margin-left:auto">수정</button>':'')+'</div></div></article>'}).join('')+'</div>';
   el.innerHTML=html;
 }
 
@@ -523,15 +523,13 @@ function renderPhoto(){
   const el=$('#p-photo');
   let list=S.refs.slice();
   if(UI.refTag!=='전체')list=list.filter(r=>(r.tags||[]).includes(UI.refTag));
-  if(UI.refDay!=='전체')list=list.filter(r=>r.day===UI.refDay);
   const allT=new Set();S.refs.forEach(r=>(r.tags||[]).forEach(t=>allT.add(t)));const usedTags=TAGS.filter(t=>allT.has(t)).concat([...allT].filter(t=>!TAGS.includes(t)));
   let html='<div class="panel-head"><div><div class="label">Photo moodboard</div><h2>사진 레퍼런스</h2></div>'+addBtn('addRef','+ 레퍼런스 추가')+'</div>';
-  html+='<div class="filters"><div class="chips">'+['전체'].concat(usedTags).map(t=>'<button class="chip" aria-pressed="'+(UI.refTag===t)+'" data-act="refTag" data-v="'+esc(t)+'">'+esc(t)+'</button>').join('')+'</div>'+
-  '<div class="chips">'+[{id:'전체',l:'모든 날'}].concat(S.days.map(d=>({id:d.id,l:d.date}))).map(d=>'<button class="chip" aria-pressed="'+(UI.refDay===d.id)+'" data-act="refDay" data-v="'+d.id+'"><span class="num">'+esc(d.l)+'</span></button>').join('')+'</div></div>';
-  if(!list.length){html+='<div class="empty"><b>'+(S.refs.length?'이 조건에 맞는 사진이 없어요':'아직 레퍼런스가 없어요')+'</b>'+(S.refs.length?'다른 태그나 날짜를 골라보세요.':'"레퍼런스 추가"로 찍고 싶은 사진을 올려보세요.')+'</div>'}
+  html+='<div class="filters"><div class="chips">'+['전체'].concat(usedTags).map(t=>'<button class="chip" aria-pressed="'+(UI.refTag===t)+'" data-act="refTag" data-v="'+esc(t)+'">'+esc(t)+'</button>').join('')+'</div>'+'</div>';
+  if(!list.length){html+='<div class="empty"><b>'+(S.refs.length?'이 조건에 맞는 사진이 없어요':'아직 레퍼런스가 없어요')+'</b>'+(S.refs.length?'다른 키워드를 골라보세요.':'"레퍼런스 추가"로 찍고 싶은 사진을 올려보세요.')+'</div>'}
   else html+='<div class="masonry">'+list.map(r=>'<button class="ref taped" data-act="editRef" data-id="'+r.id+'">'+
     (r.img?'<img loading="lazy" alt="'+esc((r.tags||[]).join(', ')||'사진 레퍼런스')+'" src="'+img(r.img)+'">':'<div class="ph"><span>'+esc(((r.tags||[])[0]||'写真').slice(0,8))+'</span></div>')+
-    '<div class="rb">'+(r.day?'<div class="spot num">'+esc(dayLabel(r.day))+'요일</div>':'<div class="spot">날짜 미정</div>')+
+    '<div class="rb">'+
     '<div class="chips" style="justify-content:flex-start">'+(r.tags||[]).map(t=>'<span class="tag tagbtn" role="button" tabindex="0" data-act="refTag" data-v="'+esc(t)+'">#'+esc(t)+'</span>').join('')+'</div></div></button>').join('')+'</div>';
   el.innerHTML=html;$('#c-photo').textContent=S.refs.length;
 }
@@ -802,7 +800,7 @@ async function saveDoc(col,id,vals,old){
 }
 async function removeDoc(col,item){await db.collection(col).doc(item.id).delete();if(item.img&&assets)assets.delete(item.img).catch(()=>{})}
 
-const refFields=[{key:'img',label:'레퍼런스 사진',type:'image'},{key:'day',label:'찍을 날',type:'select',options:[]},{key:'tags',label:'키워드',type:'multi',options:TAGS,custom:true}];
+const refFields=[{key:'img',label:'레퍼런스 사진',type:'image'},{key:'tags',label:'키워드',type:'multi',options:TAGS,custom:true}];
 const needRef=v=>(v.img||(v.tags||[]).length)?null:'사진이나 키워드를 하나 넣어주세요';
 const outfitFields=[{key:'img',label:'코디 사진',type:'image'},{key:'title',label:'코디 이름',ph:'예) 아이보리 니트 + 브라운 롱스커트'},{key:'items',label:'아이템',type:'textarea',ph:'예) 니트, 롱스커트, 로퍼, 베레모'},{key:'note',label:'메모',type:'textarea',ph:'예) 기모노 반납 후 갈아입기 편하게'},{key:'day',label:'날짜',type:'select',options:[]},{key:'who',label:'누구 코디?',type:'seg',options:['수빈','언니']}];
 const shopFields=[{key:'img',label:'사진',type:'image'},{key:'name',label:'물건 이름',ph:'예) 포켓몬센터 한정 인형'},{key:'cat',label:'종류',type:'seg',options:SHOPCAT},{key:'where',label:'어디서',ph:'예) 다이마루 신사이바시'},{key:'price',label:'가격 (엔, 세금 포함)',type:'number',ph:'0'},{key:'qty',label:'개수',type:'number',ph:'1'},{key:'who',label:'누구 거?',type:'seg',options:WHO},{key:'fav',label:'찜',type:'check',text:'♡ 찜하기'},{key:'taxfree',label:'면세',type:'check',text:'면세 등록함 (공항에서 환급받을 물건)'},{key:'bought',label:'상태',type:'check',text:'샀어요'},{key:'note',label:'메모',type:'textarea',ph:'예) 사이즈 M, 언니 부탁'},{key:'link',label:'참고 링크',type:'url',ph:'https://'}];
@@ -831,7 +829,7 @@ document.addEventListener('click',async e=>{
       fields:[{key:'title',label:'하루 제목'},{key:'stopsText',label:'장소 (한 줄에 하나: 시간 | 장소 | 메모)',type:'textarea',hint:'예) 7:00 | 후시미 이나리 | 사람 없을 때 토리이 사진'},{key:'memo',label:'메모',type:'textarea',ph:'예약번호, 준비물, 바뀐 계획 등'}],
       onSave:v=>{const stops=(v.stopsText||'').split('\n').map(l=>l.split('|').map(s=>s.trim())).filter(p=>p.join('')).map(p=>p.length===1?{t:'',name:p[0],note:''}:{t:p[0]||'',name:p[1]||'',note:p.slice(2).join(' | ')});
         const body=Object.assign({},d,{title:v.title,stops,memo:v.memo});delete body.id;if(sheetState)sheetState.saved=true;return db.collection('days').doc(d.id).set(body)}})}
-  else if(a==='addRef')openSheet({title:'사진 레퍼런스 추가',values:{who:'같이',day:UI.refDay!=='전체'?UI.refDay:'',tags:UI.refTag!=='전체'?[UI.refTag]:[]},fields:withDays(refFields),validate:needRef,onSave:v=>saveDoc('refs',null,v)});
+  else if(a==='addRef')openSheet({title:'사진 레퍼런스 추가',values:{who:'같이',tags:UI.refTag!=='전체'?[UI.refTag]:[]},fields:withDays(refFields),validate:needRef,onSave:v=>saveDoc('refs',null,v)});
   else if(a==='editRef'){const r=S.refs.find(x=>x.id===id);if(!r)return;if(!canWrite){return}
     openSheet({title:'사진 레퍼런스',values:r,fields:withDays(refFields),validate:needRef,onSave:v=>saveDoc('refs',id,Object.assign(v,{example:false}),r),onDelete:()=>removeDoc('refs',r)})}
   else if(a==='addOutfit')openSheet({title:dayLabel(b.dataset.day)+' '+b.dataset.who+' 코디',values:{day:b.dataset.day,who:b.dataset.who},fields:withDays(outfitFields),validate:needTitle('title'),onSave:v=>saveDoc('outfits',null,v)});
