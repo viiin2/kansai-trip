@@ -469,7 +469,15 @@ const IMGC={};const PIX='data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAA
 const img=id=>!id?'':String(id).startsWith('static:')?String(id).slice(7).replace(/^img\//,''):(IMGC[id]||(PIX+'" data-imgid="'+String(id).replace(/[^A-Za-z0-9_-]/g,'')));
 const yen=n=>'¥'+Math.round(Number(n)||0).toLocaleString('ja-JP');
 const safeUrl=u=>/^https?:\/\//i.test(u||'')?u:'';
-function toast(msg){const r=$('#toastRoot');r.innerHTML='<div class="toast" role="status">'+esc(msg)+'</div>';clearTimeout(toast.t);toast.t=setTimeout(()=>r.innerHTML='',2800)}
+let lastY=null;document.addEventListener('pointerdown',e=>{lastY=e.pageY},true);
+/* When the page is shown inside a frame as tall as the whole page, "fixed" sits off-screen: pin pop-ups next to where you tapped instead. */
+const tallFrame=()=>{const h=document.documentElement.scrollHeight;return window.innerHeight>=h-4&&h>window.screen.height*1.2};
+function fitOverlay(ov){if(!ov||!tallFrame())return;const box=ov.firstElementChild;const h=document.documentElement.scrollHeight;
+  ov.style.position='absolute';ov.style.top='0';ov.style.left='0';ov.style.right='0';ov.style.bottom='auto';ov.style.height=h+'px';ov.style.alignItems='flex-start';
+  const y=Math.max(16,Math.min((lastY==null?200:lastY)-160,h-(box.offsetHeight||600)-16));box.style.marginTop=y+'px';box.style.maxHeight='none';}
+function toast(msg){const r=$('#toastRoot');r.innerHTML='<div class="toast" role="status">'+esc(msg)+'</div>';const t=r.firstChild;
+  if(tallFrame()){t.style.position='absolute';t.style.bottom='auto';t.style.top=Math.max(16,(lastY==null?200:lastY)+40)+'px'}
+  clearTimeout(toast.t);toast.t=setTimeout(()=>r.innerHTML='',3200)}
 function store(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
 
 /* D-day */
@@ -609,7 +617,7 @@ function openLB(i){
   $('#lbClose').onclick=closeLB;$('#lbPrev').onclick=()=>openLB(i-1);$('#lbNext').onclick=()=>openLB(i+1);
   const del=$('#lbDel');if(del)del.onclick=async()=>{if(!del.dataset.armed){del.dataset.armed='1';del.textContent='한 번 더 누르면 삭제';return}
     try{await db.collection('pins').doc(p.id).delete();if(assets)assets.delete(p.img).catch(()=>{});toast('삭제했어요');closeLB()}catch(e){toast(writeMsg(e))}};
-  $('#lbClose').focus();
+  fitOverlay($('#lb'));$('#lbClose').focus({preventScroll:true});
 }
 function closeLB(){lbIndex=-1;$('#lbRoot').innerHTML=''}
 document.addEventListener('keydown',e=>{if(lbIndex<0)return;if(e.key==='Escape')closeLB();if(e.key==='ArrowRight')openLB(lbIndex+1);if(e.key==='ArrowLeft'&&lbIndex>0)openLB(lbIndex-1)});
@@ -700,7 +708,7 @@ function openExpense(e){
     try{if(isNew)await db.collection('expenses').add(body);else await db.collection('expenses').doc(e.id).set(body);closeSheet();toast('저장했어요')}catch(err){$('#xSave').disabled=false;toast(writeMsg(err))}};
   const del=$('#xDel');if(del)del.onclick=async()=>{if(!del.dataset.armed){del.dataset.armed='1';del.textContent='한 번 더 누르면 삭제';setTimeout(()=>{del.dataset.armed='';del.textContent='삭제'},3500);return}
     try{await db.collection('expenses').doc(e.id).delete();closeSheet();toast('삭제했어요')}catch(err){toast(writeMsg(err))}};
-  amt.focus();
+  fitOverlay(ov);amt.focus({preventScroll:true});
 }
 
 function renderAll(){renderPlan();renderPhoto();renderInspo();renderOutfit();renderShop();renderLedger();renderNotes();renderTips()}
@@ -741,7 +749,8 @@ function openSheet(cfg){
     try{await cfg.onSave(sheetState.vals);closeSheet();toast('저장했어요')}catch(e){$('#shSave').disabled=false;toast(writeMsg(e))}};
   if(cfg.onDelete){const del=$('#shDel');del.onclick=async()=>{if(!del.dataset.armed){del.dataset.armed='1';del.textContent='한 번 더 누르면 삭제';setTimeout(()=>{del.dataset.armed='';del.textContent='삭제'},3500);return}
     try{await cfg.onDelete();closeSheet();toast('삭제했어요')}catch(e){toast(writeMsg(e))}}}
-  const first=ov.querySelector('input[type=text],textarea');first&&first.focus();
+  fitOverlay(ov);
+  const first=ov.querySelector('input[type=text],textarea');first&&first.focus({preventScroll:true});
 }
 function closeSheet(){if(sheetState&&sheetState.newImg&&!sheetState.saved){/* uploaded but not saved: remove orphan */assets&&assets.delete(sheetState.newImg).catch(()=>{})}sheetState=null;$('#sheetRoot').innerHTML=''}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&sheetState)closeSheet()});
