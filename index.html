@@ -490,7 +490,12 @@ $('#track').innerHTML=days.map((x,i)=>'<li class="'+(i<k?'done':i===k?'now':'')+
 /* tabs */
 function setTab(t){UI.tab=t;document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===t));
 document.querySelectorAll('[data-panel]').forEach(p=>p.hidden=p.dataset.panel!==t);store('tab',t)}
-document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{setTab(b.dataset.tab);const m=document.querySelector('main');if(m.getBoundingClientRect().top<0)m.scrollIntoView({block:'start'})});
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{setTab(b.dataset.tab);
+  const nav=document.querySelector('nav.tabs');const m=document.querySelector('main');const mob=window.matchMedia('(max-width:640px)').matches;
+  const off=mob?0:nav.offsetHeight;const y=m.getBoundingClientRect().top+window.scrollY-off;
+  const smooth=!window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  window.scrollTo({top:Math.max(0,y),behavior:smooth?'smooth':'auto'});
+  const row=b.parentElement;row.scrollTo({left:b.offsetLeft-(row.clientWidth-b.offsetWidth)/2,behavior:smooth?'smooth':'auto'})});
 const h=(location.hash||'').slice(1);setTab(['plan','photo','inspo','outfit','shop','ledger','notes','tips'].includes(h)?h:(store('tab')||'plan'));
 
 const dayLabel=id=>{const d=S.days.find(x=>x.id===id);return d?d.date+' '+d.dow:''};
