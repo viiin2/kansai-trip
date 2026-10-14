@@ -306,6 +306,7 @@ textarea{min-height:84px;resize:vertical}
 .pins{columns:4 170px;column-gap:12px}
 .pin{display:block;width:100%;margin:0 0 12px;padding:0;border:0;border-radius:14px;overflow:hidden;break-inside:avoid;background:var(--ai-soft);box-shadow:0 1px 2px rgba(74,68,72,.08)}
 .pin img{display:block;width:100%;height:auto}
+.pin-empty{display:grid;place-items:center;aspect-ratio:4/5;max-width:100%;background:linear-gradient(170deg,var(--ai-soft),var(--shu-soft));font-family:var(--f-display);font-size:16px;color:var(--ink-2)}
 .lb{align-items:center;background:rgba(36,30,34,.86)}
 .lbbox{display:grid;gap:12px;justify-items:center;max-width:min(920px,100%);padding:16px max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
 .lbbox img{max-width:100%;max-height:76vh;object-fit:contain;border:6px solid var(--sheet);background:var(--sheet)}
@@ -527,10 +528,8 @@ function renderPhoto(){
   let html='<div class="panel-head"><div><div class="label">Photo moodboard</div><h2>사진 레퍼런스</h2></div>'+addBtn('addRef','+ 레퍼런스 추가')+'</div>';
   html+='<div class="filters"><div class="chips">'+['전체'].concat(usedTags).map(t=>'<button class="chip" aria-pressed="'+(UI.refTag===t)+'" data-act="refTag" data-v="'+esc(t)+'">'+esc(t)+'</button>').join('')+'</div>'+'</div>';
   if(!list.length){html+='<div class="empty"><b>'+(S.refs.length?'이 조건에 맞는 사진이 없어요':'아직 레퍼런스가 없어요')+'</b>'+(S.refs.length?'다른 키워드를 골라보세요.':'"레퍼런스 추가"로 찍고 싶은 사진을 올려보세요.')+'</div>'}
-  else html+='<div class="masonry">'+list.map(r=>'<button class="ref taped" data-act="editRef" data-id="'+r.id+'">'+
-    (r.img?'<img loading="lazy" alt="'+esc((r.tags||[]).join(', ')||'사진 레퍼런스')+'" src="'+img(r.img)+'">':'<div class="ph"><span>'+esc(((r.tags||[])[0]||'写真').slice(0,8))+'</span></div>')+
-    '<div class="rb">'+
-    '<div class="chips" style="justify-content:flex-start">'+(r.tags||[]).map(t=>'<span class="tag tagbtn" role="button" tabindex="0" data-act="refTag" data-v="'+esc(t)+'">#'+esc(t)+'</span>').join('')+'</div></div></button>').join('')+'</div>';
+  else html+='<div class="pins">'+list.map(r=>'<button class="pin" data-act="editRef" data-id="'+r.id+'" aria-label="'+esc((r.tags||[]).join(', ')||'사진 레퍼런스')+' 열기">'+
+    (r.img?'<img loading="lazy" alt="" src="'+img(r.img)+'">':'<span class="pin-empty">'+esc(((r.tags||[])[0]||'写真').slice(0,8))+'</span>')+'</button>').join('')+'</div>';
   el.innerHTML=html;$('#c-photo').textContent=S.refs.length;
 }
 
@@ -831,7 +830,7 @@ document.addEventListener('click',async e=>{
         const body=Object.assign({},d,{title:v.title,stops,memo:v.memo});delete body.id;if(sheetState)sheetState.saved=true;return db.collection('days').doc(d.id).set(body)}})}
   else if(a==='addRef')openSheet({title:'사진 레퍼런스 추가',values:{who:'같이',tags:UI.refTag!=='전체'?[UI.refTag]:[]},fields:withDays(refFields),validate:needRef,onSave:v=>saveDoc('refs',null,v)});
   else if(a==='editRef'){const r=S.refs.find(x=>x.id===id);if(!r)return;if(!canWrite){return}
-    openSheet({title:'사진 레퍼런스',values:r,fields:withDays(refFields),validate:needRef,onSave:v=>saveDoc('refs',id,Object.assign(v,{example:false}),r),onDelete:()=>removeDoc('refs',r)})}
+    openSheet({title:'사진 레퍼런스 수정',values:r,fields:withDays(refFields),validate:needRef,onSave:v=>saveDoc('refs',id,Object.assign(v,{example:false}),r),onDelete:()=>removeDoc('refs',r)})}
   else if(a==='addOutfit')openSheet({title:dayLabel(b.dataset.day)+' '+b.dataset.who+' 코디',values:{day:b.dataset.day,who:b.dataset.who},fields:withDays(outfitFields),validate:needTitle('title'),onSave:v=>saveDoc('outfits',null,v)});
   else if(a==='editOutfit'){const o=S.outfits.find(x=>x.id===id);if(!o||!canWrite)return;openSheet({title:'코디 수정',values:o,fields:withDays(outfitFields),validate:needTitle('title'),onSave:v=>saveDoc('outfits',id,v,o),onDelete:()=>removeDoc('outfits',o)})}
   else if(a==='addShop')openSheet({title:'쇼핑 아이템 저장',values:{who:UI.shopWho!=='전체'?UI.shopWho:'수빈',cat:'굿즈',qty:'1'},fields:shopFields,validate:needTitle('name'),onSave:v=>saveDoc('shop',null,v)});
