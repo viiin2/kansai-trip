@@ -266,6 +266,7 @@ footer.end span{font-family:var(--f-it);font-style:italic;color:var(--ink-2)}
 .field .hint{font-size:12px;color:var(--ink-2)}
 input[type=text],input[type=url],input[type=number],textarea,select{width:100%;font:inherit;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:9px 11px}
 textarea{min-height:84px;resize:vertical}
+.pasterow{display:flex;gap:6px}.pasterow input{flex:1;min-width:0}.pasterow .btn{padding:6px 12px;flex:none}
 .imgpick{display:grid;grid-template-columns:96px 1fr;gap:12px;align-items:center}
 .imgpick .pv{width:96px;height:96px;object-fit:cover;background:var(--ai-soft);display:grid;place-items:center;font-size:12px;color:var(--ink-2)}
 .sheet-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center}
@@ -467,7 +468,7 @@ let db=null, assets=null, sample=null, canWrite=true;
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const IMGC={};const PIX='data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
-const img=id=>!id?'':String(id).startsWith('static:')?String(id).slice(7).replace(/^img\//,''):(IMGC[id]||(PIX+'" data-imgid="'+String(id).replace(/[^A-Za-z0-9_-]/g,'')));
+const img=id=>!id?'':String(id).startsWith('url:')?String(id).slice(4).replace(/"/g,'%22'):String(id).startsWith('static:')?String(id).slice(7).replace(/^img\//,''):(IMGC[id]||(PIX+'" data-imgid="'+String(id).replace(/[^A-Za-z0-9_-]/g,'')));
 const yen=n=>'¥'+Math.round(Number(n)||0).toLocaleString('ja-JP');
 const safeUrl=u=>/^https?:\/\//i.test(u||'')?u:'';
 let lastY=null;document.addEventListener('pointerdown',e=>{lastY=e.pageY},true);
@@ -602,7 +603,7 @@ coverInput.onchange=async()=>{const f=coverInput.files&&coverInput.files[0];if(!
 /* ---------- inspo pins ---------- */
 function renderInspo(){
   const el=$('#p-inspo');const w=canWrite&&db&&assets;
-  let html='<div class="panel-head"><div><div class="label">Inspiration</div><h2>쇼핑 무드 핀</h2></div>'+(w?'<label class="btn" for="pinFiles" style="cursor:pointer">+ 사진 여러 장</label>':'')+'</div>';
+  let html='<div class="panel-head"><div><div class="label">Inspiration</div><h2>쇼핑 무드 핀</h2></div>'+(w?'<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center"><button class="btn ghost" data-act="pastePins">붙여넣기</button><label class="btn" for="pinFiles" style="cursor:pointer">+ 사진 여러 장</label></div>':'')+'</div>';
   html+='<input type="file" id="pinFiles" accept="image/*" multiple class="vh" tabindex="-1" aria-hidden="true"><div id="pinStatus" class="pinstatus" aria-live="polite"></div>';
   if(!S.pins.length)html+='<div class="empty"><b>아직 핀이 없어요</b>'+(w?'"사진 여러 장"을 눌러 갤러리에서 한꺼번에 골라 올려보세요.':'사진은 이 페이지의 편집자가 올릴 수 있어요.')+'</div>';
   else html+='<div class="pins">'+S.pins.map((p,i)=>'<button class="pin" data-act="openPin" data-i="'+i+'" aria-label="핀 '+(i+1)+' 크게 보기"><img loading="lazy" alt="" src="'+img(p.img)+'"></button>').join('')+'</div>';
@@ -644,6 +645,8 @@ function renderNotes(){
     (w?'<form class="additem" data-id="'+n.id+'"><input type="text" id="add_'+n.id+'" placeholder="항목 추가" aria-label="항목 추가"><button class="mini" type="submit">추가</button></form>':'')+'</article>'}).join('')+'</div>';
   el.innerHTML=html;$('#c-notes').textContent=S.notes.length;
 }
+document.addEventListener('paste',e=>{if(UI.tab!=='inspo'||sheetState||!db||!assets)return;const tg=e.target;if(tg&&/INPUT|TEXTAREA/.test(tg.tagName))return;
+  const files=[...((e.clipboardData&&e.clipboardData.files)||[])].filter(f=>/^image\//.test(f.type));if(files.length){e.preventDefault();uploadPins(files)}});
 document.addEventListener('submit',async e=>{const f=e.target.closest('.additem');if(!f)return;e.preventDefault();
   const n=S.notes.find(x=>x.id===f.dataset.id);const inp=f.querySelector('input');const t=inp.value.trim();if(!n||!t||!db)return;
   inp.value='';try{await db.collection('notes').doc(n.id).update({items:(n.items||[]).concat([{t,done:false}])});setTimeout(()=>{const i=$('#add_'+n.id);i&&i.focus()},60)}catch(err){inp.value=t;toast(writeMsg(err))}});
@@ -732,7 +735,7 @@ function openSheet(cfg){
     else if(fd.type==='seg')inner='<div class="chips" data-seg="'+fd.key+'">'+fd.options.map(o=>'<button type="button" class="chip" aria-pressed="'+(o===v)+'" data-v="'+esc(o)+'">'+esc(o)+'</button>').join('')+'</div>';
     else if(fd.type==='multi')inner='<div class="chips" style="justify-content:flex-start" data-multi="'+fd.key+'">'+Array.from(new Set(fd.options.concat(v||[]))).map(o=>'<button type="button" class="chip" aria-pressed="'+((v||[]).includes(o))+'" data-v="'+esc(o)+'">'+esc(o)+'</button>').join('')+'</div>'+(fd.custom?'<div style="display:flex;gap:6px"><input type="text" id="kw_'+fd.key+'" placeholder="키워드 직접 추가 (예: 우산, 노을)"><button type="button" class="btn ghost" data-addkw="'+fd.key+'">추가</button></div>':'');
     else if(fd.type==='check')inner='<label style="display:flex;gap:8px;align-items:center;font-weight:400"><input type="checkbox" id="'+id+'" data-k="'+fd.key+'"'+(v?' checked':'')+'> '+esc(fd.text)+'</label>';
-    else if(fd.type==='image')inner=assets?'<div class="imgpick">'+(v?'<img class="pv" id="pv" alt="" src="'+img(v)+'">':'<div class="pv" id="pv">사진 없음</div>')+'<div style="display:grid;gap:6px"><input type="file" id="'+id+'" accept="image/*" data-img="'+fd.key+'"><span class="hint" id="imgStatus">갤러리 사진이나 캡처 이미지를 올려요</span></div></div>':'<span class="hint">사진을 올릴 수 없어요.</span>';
+    else if(fd.type==='image')inner=assets?'<div class="imgpick">'+(v?'<img class="pv" id="pv" alt="" src="'+img(v)+'">':'<div class="pv" id="pv">사진 없음</div>')+'<div style="display:grid;gap:6px"><input type="file" id="'+id+'" accept="image/*" data-img="'+fd.key+'"><div class="pasterow"><button type="button" class="btn ghost" data-pastebtn="'+fd.key+'">붙여넣기</button><input type="url" id="url_'+fd.key+'" data-imgurl="'+fd.key+'" placeholder="이미지 주소 붙여넣기" inputmode="url" autocomplete="off"></div><span class="hint" id="imgStatus">사진을 고르거나, 핀터레스트에서 이미지 복사 후 붙여넣기</span></div></div>':'<span class="hint">사진을 올릴 수 없어요.</span>';
     else inner='<input id="'+id+'" data-k="'+fd.key+'" type="'+(fd.type||'text')+'" value="'+esc(v??'')+'" placeholder="'+esc(fd.ph||'')+'"'+(fd.type==='number'?' inputmode="numeric" min="0"':'')+'>';
     return '<div class="field">'+(fd.type==='check'?'':'<'+(['seg','multi','image'].includes(fd.type)?'span class="lab"':'label for="'+id+'"')+'>'+esc(fd.label)+'</'+(['seg','multi','image'].includes(fd.type)?'span':'label')+'>')+inner+(fd.hint?'<span class="hint">'+esc(fd.hint)+'</span>':'')+'</div>'}).join('');
   $('#sheetRoot').innerHTML='<div class="overlay" id="ov"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="shT"><h3 id="shT">'+esc(cfg.title)+'</h3>'+f+
@@ -744,10 +747,25 @@ function openSheet(cfg){
   ov.querySelectorAll('[data-multi]').forEach(g=>g.addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;const on=b.getAttribute('aria-pressed')!=='true';b.setAttribute('aria-pressed',on);const k=g.dataset.multi;const cur=new Set(sheetState.vals[k]||[]);on?cur.add(b.dataset.v):cur.delete(b.dataset.v);sheetState.vals[k]=Array.from(cur)}));
   ov.querySelectorAll('[data-addkw]').forEach(bt=>{const k=bt.dataset.addkw,inp=$('#kw_'+k);const add=()=>{const t=inp.value.trim().replace(/^#/,'');if(!t)return;const cur=new Set(sheetState.vals[k]||[]);cur.add(t);sheetState.vals[k]=[...cur];const g=ov.querySelector('[data-multi="'+k+'"]');let c=[...g.querySelectorAll('.chip')].find(x=>x.dataset.v===t);if(!c){c=document.createElement('button');c.type='button';c.className='chip';c.dataset.v=t;c.textContent=t;g.appendChild(c)}c.setAttribute('aria-pressed','true');inp.value='';inp.focus()};
     bt.onclick=add;inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();add()}})});
-  ov.querySelectorAll('[data-img]').forEach(inp=>inp.onchange=async()=>{const file=inp.files&&inp.files[0];if(!file)return;
-    sheetState.uploading=true;$('#shSave').disabled=true;$('#imgStatus').textContent='올리는 중…';
-    try{const id=await upload(file);sheetState.vals[inp.dataset.img]=id;sheetState.newImg=id;const pv=$('#pv');pv.outerHTML='<img class="pv" id="pv" alt="" src="'+img(id)+'">';$('#imgStatus').textContent='올렸어요';}
-    catch(e){$('#imgStatus').textContent=uploadMsg(e)}finally{sheetState.uploading=false;$('#shSave').disabled=false}});
+  const imgKey=(ov.querySelector('[data-img],[data-imgurl]')||{}).dataset;const IK=imgKey&&(imgKey.img||imgKey.imgurl);
+  const setStatus=t=>{const e=$('#imgStatus');if(e)e.textContent=t};
+  const setPreview=src=>{const pv=$('#pv');if(pv)pv.outerHTML='<img class="pv" id="pv" alt="" src="'+src+'">';};
+  const setImgFile=async file=>{if(!IK||!file)return;sheetState.uploading=true;$('#shSave').disabled=true;setStatus('올리는 중…');
+    try{const id=await upload(file);sheetState.vals[IK]=id;sheetState.newImg=id;setPreview(img(id));setStatus('올렸어요')}
+    catch(e){setStatus(uploadMsg(e))}finally{sheetState.uploading=false;$('#shSave').disabled=false}};
+  const setImgUrl=raw=>{if(!IK)return false;const u=String(raw||'').trim();if(!u)return false;
+    if(!/^https:\/\//i.test(u)){setStatus('https:// 로 시작하는 이미지 주소를 넣어주세요');return false}
+    if(/(pinterest\.[a-z.]+\/pin|pin\.it\/)/i.test(u)&&!/pinimg\.com/i.test(u)){setStatus('핀 링크 말고, 사진을 길게 눌러 "이미지 복사" 한 뒤 붙여넣기 해주세요');return false}
+    sheetState.vals[IK]='url:'+u;setPreview(u.replace(/"/g,'%22'));setStatus('주소로 넣었어요');const pv=$('#pv');if(pv)pv.onerror=()=>setStatus('이 주소로는 사진을 못 불러와요. "이미지 복사" 후 붙여넣기 해보세요');return true};
+  ov.querySelectorAll('[data-img]').forEach(inp=>inp.onchange=()=>setImgFile(inp.files&&inp.files[0]));
+  ov.querySelectorAll('[data-imgurl]').forEach(inp=>{inp.addEventListener('change',()=>{if(setImgUrl(inp.value))inp.value=''});inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();if(setImgUrl(inp.value))inp.value=''}})});
+  ov.addEventListener('paste',e=>{if(!IK)return;const cd=e.clipboardData;if(!cd)return;const f=[...(cd.files||[])].find(x=>/^image\//.test(x.type));
+    if(f){e.preventDefault();setImgFile(f);return}
+    const t=cd.getData('text/plain');if(e.target&&e.target.dataset&&e.target.dataset.imgurl!==undefined&&t){e.preventDefault();setImgUrl(t)}});
+  ov.querySelectorAll('[data-pastebtn]').forEach(b=>b.onclick=async()=>{
+    try{if(navigator.clipboard&&navigator.clipboard.read){const items=await navigator.clipboard.read();for(const it of items){const ty=it.types.find(x=>/^image\//.test(x));if(ty){setImgFile(await it.getType(ty));return}}}
+      const t=navigator.clipboard&&navigator.clipboard.readText?await navigator.clipboard.readText():'';if(t&&setImgUrl(t))return;setStatus('복사된 사진이 없어요. 핀터레스트에서 사진을 길게 눌러 "이미지 복사" 해주세요')}
+    catch(err){setStatus('아래 칸을 길게 눌러 "붙여넣기" 해주세요');const u=$('#url_'+IK);if(u)u.focus()}});
   $('#shSave').onclick=async()=>{
     ov.querySelectorAll('[data-addkw]').forEach(bt=>{const inp=$('#kw_'+bt.dataset.addkw);if(inp&&inp.value.trim())bt.click()});
     ov.querySelectorAll('[data-k]').forEach(i=>{sheetState.vals[i.dataset.k]=i.type==='checkbox'?i.checked:i.value.trim()});
@@ -798,6 +816,9 @@ document.addEventListener('click',async e=>{
   const a=b.dataset.act, id=b.dataset.id;
   if(a==='refTag'){UI.refTag=b.dataset.v;renderPhoto();const pp=$('#p-photo');if(pp.getBoundingClientRect().top<0)pp.scrollIntoView({block:'start'})}
   else if(a==='openPin')openLB(+b.dataset.i);
+  else if(a==='pastePins'){if(!db||!assets)return;try{const items=await navigator.clipboard.read();const blobs=[];for(const it of items){const ty=it.types.find(x=>/^image\//.test(x));if(ty)blobs.push(await it.getType(ty))}
+      if(blobs.length){uploadPins(blobs);return}const t=(await navigator.clipboard.readText()).trim();if(/^https:\/\/\S+$/i.test(t)&&!/(pinterest\.[a-z.]+\/pin|pin\.it\/)/i.test(t)){await db.collection('pins').add({img:'url:'+t,createdAt:Date.now()});toast('주소로 핀을 추가했어요');return}
+      toast('복사된 사진이 없어요. 핀터레스트에서 사진을 길게 눌러 "이미지 복사" 해주세요')}catch(err){toast('Ctrl+V(폰은 화면 길게 눌러 붙여넣기)로 붙여넣어 주세요')}}
   else if(a==='refDay'){UI.refDay=b.dataset.v;renderPhoto()}
   else if(a==='goRefs'){UI.refDay=b.dataset.day;UI.refTag='전체';renderPhoto();setTab('photo');scrollTo({top:0})}
   else if(a==='goOutfit'){setTab('outfit');scrollTo({top:0})}
@@ -866,7 +887,7 @@ renderCover();
       onSnapshot:(n,e)=>onSnapshot(collection(fs,p),s=>n({docs:s.docs.map(x=>({id:x.id,exists:true,data:()=>x.data()}))}),e)}),
     doc:p=>wrapDoc(doc(fs,p))};
   assets={async upload(blob){const data=await toDataURL(blob);if(data.length>950000)throw {code:'too_large'};const r=await addDoc(collection(fs,'images'),{data,createdAt:Date.now()});IMGC[r.id]=data;return {id:r.id}},
-    async delete(id){if(!id||String(id).startsWith('static:'))return;delete IMGC[id];await deleteDoc(doc(fs,'images',id))}};
+    async delete(id){if(!id||/^(static|url):/.test(String(id)))return;delete IMGC[id];await deleteDoc(doc(fs,'images',id))}};
   sample=null;canWrite=true;
   /* load uploaded photos into <img data-imgid> */
   const loading=new Set();
