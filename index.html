@@ -396,9 +396,9 @@ textarea{min-height:84px;resize:vertical}
       <span class="ko">수빈 &amp; 이령의 간사이 7박 8일 여행 스크랩북</span>
     </div>
     <div class="triptych">
-      <button class="tframe snap" data-slot="2" aria-label="무드 사진 1 바꾸기"><img alt="무드 사진" src="mood1.jpg"><span class="cap">osaka</span></button>
-      <button class="tframe snap" data-slot="3" aria-label="무드 사진 2 바꾸기"><img alt="무드 사진" src="mood2.jpg"><span class="cap">kyoto</span></button>
-      <button class="tframe snap" data-slot="4" aria-label="무드 사진 3 바꾸기"><img alt="무드 사진" src="mood3.jpg"><span class="cap">us</span></button>
+      <figure class="tframe" style="margin:0"><img alt="osaka 무드 사진" src="mood1.jpg" width="600" height="600"><span class="cap">osaka</span></figure>
+      <figure class="tframe" style="margin:0"><img alt="kyoto 무드 사진" src="mood2.jpg" width="600" height="600"><span class="cap">kyoto</span></figure>
+      <figure class="tframe" style="margin:0"><img alt="us 무드 사진" src="mood3.jpg" width="600" height="600"><span class="cap">us</span></figure>
     </div>
     <div class="quote"><div>For two sisters, here we keep the places, the outfits, and every little thing we'll bring home.<small id="coverTip"></small></div></div>
   </div>
@@ -872,9 +872,10 @@ renderCover();
     Object.entries(SEED).forEach(([col,docs])=>Object.entries(docs).forEach(([id,d])=>b.set(doc(fs,col,id),d)));b.set(doc(fs,'meta','seeded'),{at:Date.now()});await b.commit()}}catch(e){console.error(e)}})();
   renderAll();
   const sub=(col,key,sort)=>db.collection(col).onSnapshot(snap=>{S[key]=snap.docs.map(x=>Object.assign({id:x.id},x.data()));if(sort)S[key].sort(sort);
-      if(key==='days')renderAll();else ({refs:renderPhoto,outfits:renderOutfit,shop:renderShop,tips:renderTips,pins:renderInspo,notes:renderNotes,expenses:renderLedger})[key]();if(key==='refs'||key==='outfits')renderPlan()},
+      if(key==='days'){renderAll();if(S.days.length&&/카카오톡/.test(conn.textContent))conn.hidden=true}else ({refs:renderPhoto,outfits:renderOutfit,shop:renderShop,tips:renderTips,pins:renderInspo,notes:renderNotes,expenses:renderLedger})[key]();if(key==='refs'||key==='outfits')renderPlan()},
     err=>{conn.hidden=false;conn.textContent='연결이 끊겼어요. 페이지를 새로고침해 주세요.';console.error(err)});
   sub('days','days',(x,y)=>(x.order||0)-(y.order||0));
+  setTimeout(()=>{if(!S.days.length){conn.hidden=false;conn.textContent='내용을 불러오지 못하고 있어요. 카카오톡 안에서 열었다면 오른쪽 아래 메뉴에서 Safari(또는 Chrome)로 열어주세요.'}},10000);
   sub('refs','refs',(x,y)=>(y.createdAt||0)-(x.createdAt||0));
   sub('outfits','outfits',(x,y)=>(x.createdAt||0)-(y.createdAt||0));
   sub('shop','shop');
