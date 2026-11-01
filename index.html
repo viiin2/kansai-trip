@@ -285,6 +285,11 @@ main{padding-block:26px 40px}
 .marrow.prev{left:8px}.marrow.next{right:8px}
 .marrow:disabled{opacity:0;pointer-events:none}
 .mdiv{border-top:1px dotted var(--line);margin:4px 14px 2px}
+.mdays{position:relative;padding:0 0 2px;margin:0}
+.mdays .chip.has::after{content:" •";color:var(--shu)}
+.msave{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;min-height:40px}
+.msaved{font-size:14px;color:var(--shu)}
+.lhead{gap:8px}.lhead .mini{margin-left:auto}
 .mempty{margin:0 14px;height:clamp(120px,22vh,200px);display:grid;place-items:center;align-content:center;gap:8px;border:1px dashed var(--frame);border-radius:10px;color:var(--ink-2);font-size:13px;text-align:center;padding:8px}
 
 /* ---- wardrobe grid (한눈에) ---- */
@@ -560,8 +565,8 @@ const SHOPCAT=['굿즈','화장품','옷·잡화','간식','기념품','기타']
 const TIPCAT=['교통','쇼핑·면세','사진','음식','오타쿠','예약','기타'];
 const CITY={osaka:['大阪','c-osaka'],kyoto:['京都','c-kyoto'],move:['移動','c-move'],home:['帰国','c-move']};
 
-const S={days:[],refs:[],outfits:[],shop:[],tips:[],pins:[],notes:[],expenses:[],settings:{},cover:{imgs:[]},loaded:false};
-const UI={expDay:'전체',tab:'plan',refTag:'전체',refDay:'전체',shopView:'전체',shopWho:'전체',outView:'mix',outCat:'상의',outDay:null,pick:{},mixWho:store('mixWho')==='이령'?'이령':'수빈',mixPos:{}};
+const S={days:[],refs:[],outfits:[],looks:[],shop:[],tips:[],pins:[],notes:[],expenses:[],settings:{},cover:{imgs:[]},loaded:false};
+const UI={expDay:'전체',tab:'plan',refTag:'전체',refDay:'전체',shopView:'전체',shopWho:'전체',outView:'mix',outCat:'상의',outDay:null,pick:{},mixWho:store('mixWho')==='이령'?'이령':'수빈',mixPos:{},mixDay:null};
 let db=null, assets=null, sample=null, canWrite=true;
 
 const $=s=>document.querySelector(s);
@@ -611,7 +616,7 @@ function renderPlan(){
   if(!S.days.length){html+='<div class="empty"><b>일정을 불러오는 중이에요</b>공유 저장소에 연결되면 11/18~11/25 하루별 일정이 여기에 나타나요.</div>';el.innerHTML=html;return}
   html+='<div class="days">'+S.days.map(d=>{
     const c=CITY[d.city]||CITY.move;
-    const nr=S.refs.filter(r=>r.day===d.id).length, no=S.outfits.filter(o=>o.day===d.id).length;
+    const nr=S.refs.filter(r=>r.day===d.id).length, no=dayItems(d.id,'수빈').length+dayItems(d.id,'이령').length;
     return '<article class="day"><div class="when"><span class="date">'+esc(d.date)+'</span><span class="dow">'+esc(d.dow)+'요일</span><span class="city '+c[1]+'">'+c[0]+'</span></div>'+
     '<div class="body"><h3>'+esc(d.title)+'</h3><ul class="stops">'+(d.stops||[]).map(s=>'<li><span class="t">'+esc(s.t||'')+'</span><span><span class="n">'+esc(s.name)+'</span>'+(s.note?' <span class="note">· '+esc(s.note)+'</span>':'')+'</span></li>').join('')+'</ul>'+
     (d.memo?'<div class="memo">'+esc(d.memo)+'</div>':'')+
@@ -637,13 +642,17 @@ const BIGCATS=['상의','아우터','원피스','하의','치마'];
 const ownorm=o=>(o.who==='언니'?'이령':(o.who||'수빈'));
 const ocat=o=>OUTCATS.includes(o.cat)?o.cat:'기타';
 const outOf=(dayId,w)=>S.outfits.filter(o=>o.day===dayId&&ownorm(o)===w);
+/* 맞춰보기에서 저장한 날짜별 조합(looks)도 그 날 코디에 같이 보여줘요 */
+const lookOf=(dayId,w)=>S.looks.find(l=>l.day===dayId&&ownorm(l)===w);
+const dayItems=(dayId,w)=>{const l=lookOf(dayId,w);const xs=l?[l.top,l.bottom].map(id=>id&&S.outfits.find(o=>o.id===id)).filter(Boolean):[];
+  return xs.concat(outOf(dayId,w).filter(o=>!xs.includes(o)))};
 const pickOf=(dayId,w,c,items)=>{const id=UI.pick[dayId+'|'+w+'|'+c];return items.find(o=>o.id===id&&ocat(o)===c)||items.find(o=>ocat(o)===c)};
 const thumbHTML=o=>o.img?'<img alt="" src="'+img(o.img)+'">':'<span class="nophoto">'+esc(o.title||ocat(o))+'</span>';
 function lookBlock(d,w){
-  const items=outOf(d.id,w);const cats=OUTCATS.filter(c=>items.some(o=>ocat(o)===c));
+  const items=dayItems(d.id,w);const cats=OUTCATS.filter(c=>items.some(o=>ocat(o)===c));
   const canEdit=canWrite&&db;
   return '<section class="look" aria-label="'+w+' 코디">'+
-    '<div class="lhead"><span class="who who-'+w+'">'+w+'</span><span class="muted num" style="font-size:13px">'+items.length+'개</span></div>'+
+    '<div class="lhead"><span class="who who-'+w+'">'+w+'</span><span class="muted num" style="font-size:13px">'+items.length+'개</span><button class="mini" data-act="goMix" data-day="'+d.id+'" data-who="'+w+'">맞춰보기로 고르기</button></div>'+
     
     cats.map(c=>{const list=items.filter(o=>ocat(o)===c);const pk=pickOf(d.id,w,c,items);
       return '<div class="lstrip"><span class="lab">'+c+'</span><div class="lrail">'+list.map(o=>'<button class="ocard'+(pk&&pk.id===o.id?' on':'')+'" data-act="pickOut" data-day="'+d.id+'" data-who="'+w+'" data-cat="'+c+'" data-id="'+o.id+'"><span class="ph">'+thumbHTML(o)+'</span><small>'+esc(o.title||c)+'</small></button>').join('')+'</div></div>'}).join('')+
@@ -659,7 +668,20 @@ function mixIdx(rail){const xs=rail.querySelectorAll('.mitem');if(!xs.length)ret
 function mixSync(rail){const xs=rail.querySelectorAll('.mitem');const i=mixIdx(rail);if(i<0)return;
   xs.forEach((x,j)=>x.classList.toggle('on',j===i));UI.mixPos[UI.mixWho+'|'+rail.dataset.row]=xs[i].dataset.id;
   const row=rail.closest('.mrow');row.querySelector('.mcount').textContent=(i+1)+' / '+xs.length;
-  row.querySelector('.marrow.prev').disabled=i<=0;row.querySelector('.marrow.next').disabled=i>=xs.length-1}
+  row.querySelector('.marrow.prev').disabled=i<=0;row.querySelector('.marrow.next').disabled=i>=xs.length-1;mixSaveState()}
+const mixDayId=()=>{const d=S.days.find(x=>x.id===UI.mixDay)||S.days[0];UI.mixDay=d?d.id:null;return UI.mixDay};
+const mixCur=()=>{const on=k=>{const x=document.querySelector('#p-outfit .mrail[data-row="'+k+'"] .mitem.on');return x?x.dataset.id:''};return {top:on('top'),bottom:on('bot')}};
+function mixApplyLook(){const w=UI.mixWho,l=lookOf(mixDayId(),w);if(!l)return false;
+  if(l.top)UI.mixPos[w+'|top']=l.top;if(l.bottom)UI.mixPos[w+'|bot']=l.bottom;return true}
+function mixSaveState(){const bar=document.querySelector('#p-outfit .msave');if(!bar)return;
+  const w=UI.mixWho,day=mixDayId(),l=day&&lookOf(day,w),c=mixCur(),canEdit=canWrite&&db,dl=day?dayLabel(day):'';
+  const same=!!l&&(l.top||'')===c.top&&(l.bottom||'')===c.bottom;
+  const k=[w,day,c.top,c.bottom,l?(l.top||'')+'/'+(l.bottom||''):'-',canEdit?1:0].join('|');if(bar.dataset.k===k)return;bar.dataset.k=k;
+  if(!day||(!c.top&&!c.bottom)){bar.innerHTML='';return}
+  if(same)bar.innerHTML='<span class="msaved">✓ '+esc(dl)+' '+w+' 코디로 저장됐어요</span>'+(canEdit?'<button class="mini" data-act="mixClear">지우기</button>':'');
+  else if(canEdit)bar.innerHTML='<button class="btn shu" data-act="mixSave">'+esc(dl)+' 코디로 '+(l?'바꾸기':'저장')+'</button>'+(l?'<button class="mini" data-act="mixShow">저장된 조합 보기</button>':'');
+  else bar.innerHTML=l?'<button class="mini" data-act="mixShow">'+esc(dl)+' 저장된 조합 보기</button>':'';
+}
 function mixGo(rail,i,smooth){const x=rail.querySelectorAll('.mitem')[i];if(!x)return;
   rail.scrollTo({left:x.offsetLeft+x.offsetWidth/2-rail.clientWidth/2,behavior:smooth&&!matchMedia('(prefers-reduced-motion: reduce)').matches?'smooth':'auto'})}
 function mixRestore(smooth){document.querySelectorAll('#p-outfit .mrail').forEach(rail=>{if(!rail.clientWidth)return;
@@ -667,7 +689,10 @@ function mixRestore(smooth){document.querySelectorAll('#p-outfit .mrail').forEac
   mixGo(rail,Math.max(0,xs.findIndex(x=>x.dataset.id===id)),smooth);mixSync(rail)})}
 function mixHTML(){
   const w=UI.mixWho, canEdit=canWrite&&db;
-  let html='<div class="mix"><div class="mixbar"><div class="chips" role="group" aria-label="누구 옷장?">'+['수빈','이령'].map(x=>'<button class="chip" aria-pressed="'+(w===x)+'" data-act="mixWho" data-v="'+x+'">'+x+'</button>').join('')+'</div><small>옆으로 넘겨서 맞춰보세요</small></div><div class="mboard">';
+  const day=mixDayId();
+  let html='<div class="mix"><div class="mixbar"><div class="chips" role="group" aria-label="누구 옷장?">'+['수빈','이령'].map(x=>'<button class="chip" aria-pressed="'+(w===x)+'" data-act="mixWho" data-v="'+x+'">'+x+'</button>').join('')+'</div><small>옆으로 넘겨서 맞춰보세요</small></div>';
+  if(S.days.length)html+='<div class="daychips mdays" role="group" aria-label="어느 날 코디?">'+S.days.map(d=>'<button class="chip'+(lookOf(d.id,w)?' has':'')+'" aria-pressed="'+(d.id===day)+'" data-act="mixDay" data-v="'+d.id+'">'+esc(d.date)+' '+esc(d.dow)+'</button>').join('')+'</div>';
+  html+='<div class="mboard">';
   html+=MIXROWS.map((r,ri)=>{const list=mixItems(w,r);
     const up=canEdit?'<button class="mini" data-act="mixUp" data-cat="'+r.up+'" data-row="'+r.k+'">+ 사진</button>':'';
     const head='<div class="mhead"><b>'+r.lab+'</b><span class="mcount num">'+(list.length?'1 / '+list.length:'0')+'</span>'+up+'</div>';
@@ -676,7 +701,7 @@ function mixHTML(){
         '<button class="marrow next" data-act="mixStep" data-v="1" aria-label="다음 '+r.lab+'"'+(list.length<2?' disabled':'')+'>›</button></div>'
       :'<div class="mempty">아직 '+w+' '+r.lab+' 사진이 없어요'+(canEdit?'<span>위의 "+ 사진"으로 여러 장 한 번에 올릴 수 있어요</span>':'')+'</div>';
     return (ri?'<div class="mdiv"></div>':'')+'<section class="mrow" aria-label="'+r.lab+'">'+head+body+'</section>'}).join('');
-  return html+'</div></div>';
+  return html+'</div><div class="msave" aria-live="polite"></div></div>';
 }
 function renderOutfit(){
   const el=$('#p-outfit');
@@ -684,7 +709,9 @@ function renderOutfit(){
   if(UI.outView==='mix'){
     el.innerHTML=html+mixHTML();$('#c-outfit').textContent=S.outfits.length;
     el.querySelectorAll('.mrail').forEach(rail=>rail.addEventListener('scroll',()=>{if(rail._raf)return;rail._raf=requestAnimationFrame(()=>{rail._raf=0;mixSync(rail)})},{passive:true}));
-    mixRestore(false);return;
+    mixRestore(false);mixSaveState();
+    const dc=el.querySelector('.mdays [aria-pressed="true"]');if(dc)dc.parentElement.scrollLeft=dc.offsetLeft-(dc.parentElement.clientWidth-dc.offsetWidth)/2;
+    return;
   }
   if(!S.days.length){html+='<div class="empty"><b>일정을 불러오는 중이에요</b>날짜가 생기면 날짜마다 코디 카드가 만들어져요.</div>';el.innerHTML=html;return}
   if(UI.outView==='all'){
@@ -692,7 +719,7 @@ function renderOutfit(){
     const LEFT=['상의','아우터','원피스','하의','치마'];
     const cell=o=>'<button class="fitem" data-act="editOutfit" data-id="'+o.id+'" aria-label="'+esc(o.title||ocat(o))+' 수정">'+thumbHTML(o)+'</button>';
     html+='<div class="fdays">'+S.days.map(d=>'<article class="fday"><header class="fdh"><b class="num">'+esc(d.date)+' '+esc(d.dow)+'</b><span>'+esc(d.title||'')+'</span></header>'+
-      ['수빈','이령'].map(w=>{const items=outOf(d.id,w).slice().sort(byCat);
+      ['수빈','이령'].map(w=>{const items=dayItems(d.id,w).sort(byCat);
         if(!items.length)return '<div class="fwho"><span class="who who-'+w+'">'+w+'</span></div><div class="flat flat-empty">아직 없어요</div>';
         const L=items.filter(o=>LEFT.includes(ocat(o))), R=items.filter(o=>!LEFT.includes(ocat(o)));
         return '<div class="fwho"><span class="who who-'+w+'">'+w+'</span></div><div class="flat"><div class="fcol">'+L.map(cell).join('')+'</div><div class="fcol">'+R.map(cell).join('')+'</div></div>';
@@ -994,7 +1021,10 @@ document.addEventListener('click',async e=>{
   else if(a==='goRefs'){UI.refDay=b.dataset.day;UI.refTag='전체';renderPhoto();setTab('photo');scrollTo({top:0})}
   else if(a==='goOutfit'){setTab('outfit');scrollTo({top:0})}
   else if(a==='outView'){UI.outView=b.dataset.v;renderOutfit()}
-  else if(a==='mixWho'){UI.mixWho=b.dataset.v;store('mixWho',UI.mixWho);renderOutfit()}
+  else if(a==='mixWho'){UI.mixWho=b.dataset.v;store('mixWho',UI.mixWho);mixApplyLook();renderOutfit()}
+  else if(a==='mixDay'){UI.mixDay=b.dataset.v;document.querySelectorAll('#p-outfit [data-act="mixDay"]').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.v===UI.mixDay)));if(mixApplyLook())mixRestore(true);mixSaveState()}
+  else if(a==='mixShow'){if(mixApplyLook())mixRestore(true)}
+  else if(a==='goMix'){UI.outView='mix';UI.mixDay=b.dataset.day;UI.mixWho=b.dataset.who;mixApplyLook();renderOutfit();const p=$('#p-outfit');if(p.getBoundingClientRect().top<0)p.scrollIntoView({block:'start'})}
   else if(a==='mixStep'){const rail=b.closest('.mwrap').querySelector('.mrail');mixGo(rail,mixIdx(rail)+Number(b.dataset.v),true)}
   else if(a==='editOutfit'&&b.classList.contains('mitem')&&!b.classList.contains('on')){const rail=b.parentElement;mixGo(rail,[...rail.querySelectorAll('.mitem')].indexOf(b),true)}
   else if(a==='outDay'){UI.outDay=b.dataset.v;renderOutfit()}
@@ -1015,6 +1045,10 @@ document.addEventListener('click',async e=>{
   else if(a==='addRef')openSheet({title:'사진 레퍼런스 추가',values:{who:'같이',tags:UI.refTag!=='전체'?[UI.refTag]:[]},fields:withDays(refFields),validate:needRef,onSave:v=>saveDoc('refs',null,v)});
   else if(a==='editRef'){const r=S.refs.find(x=>x.id===id);if(!r)return;if(!canWrite){return}
     openSheet({title:'사진 레퍼런스 수정',values:r,fields:withDays(refFields),validate:needRef,onSave:v=>saveDoc('refs',id,Object.assign(v,{example:false}),r),onDelete:()=>removeDoc('refs',r)})}
+  else if(a==='mixSave'){const c=mixCur(),w=UI.mixWho,day=mixDayId();if(!day||(!c.top&&!c.bottom))return;b.disabled=true;
+    try{await db.collection('looks').doc(day+'_'+w).set({day,who:w,top:c.top,bottom:c.bottom,createdAt:Date.now()});toast(dayLabel(day)+' '+w+' 코디로 저장했어요')}
+    catch(err){b.disabled=false;toast('저장하지 못했어요. 다시 시도해 주세요')}}
+  else if(a==='mixClear'){const w=UI.mixWho,day=mixDayId();if(!day)return;try{await db.collection('looks').doc(day+'_'+w).delete();toast(dayLabel(day)+' 코디를 지웠어요')}catch(err){toast('지우지 못했어요. 다시 시도해 주세요')}}
   else if(a==='mixUp'){const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.multiple=true;const w=UI.mixWho,row=b.dataset.row,cat=b.dataset.cat;
     inp.onchange=async()=>{const id=await uploadOutfits([...inp.files],'',w,cat);if(id&&UI.mixWho===w){UI.mixPos[w+'|'+row]=id;if(UI.outView==='mix')mixRestore(true)}};inp.click()}
   else if(a==='bulkOut'){const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.multiple=true;inp.onchange=()=>uploadOutfits([...inp.files],b.dataset.day,b.dataset.who);inp.click()}
@@ -1087,12 +1121,13 @@ renderCover();
     Object.entries(SEED).forEach(([col,docs])=>Object.entries(docs).forEach(([id,d])=>b.set(doc(fs,col,id),d)));b.set(doc(fs,'meta','seeded'),{at:Date.now()});await b.commit()}}catch(e){console.error(e)}})();
   renderAll();
   const sub=(col,key,sort)=>db.collection(col).onSnapshot(snap=>{S[key]=snap.docs.map(x=>Object.assign({id:x.id},x.data()));if(sort)S[key].sort(sort);
-      if(key==='days'){renderAll();if(S.days.length&&/카카오톡/.test(conn.textContent))conn.hidden=true}else ({refs:renderPhoto,outfits:renderOutfit,shop:renderShop,tips:renderTips,pins:renderInspo,notes:renderNotes,expenses:renderLedger})[key]();if(key==='refs'||key==='outfits')renderPlan()},
+      if(key==='days'){renderAll();if(S.days.length&&/카카오톡/.test(conn.textContent))conn.hidden=true}else ({refs:renderPhoto,outfits:renderOutfit,looks:()=>{if(!S.looksSeen){S.looksSeen=true;mixApplyLook()}renderOutfit()},shop:renderShop,tips:renderTips,pins:renderInspo,notes:renderNotes,expenses:renderLedger})[key]();if(key==='refs'||key==='outfits'||key==='looks')renderPlan()},
     err=>{conn.hidden=false;conn.textContent='연결이 끊겼어요. 페이지를 새로고침해 주세요.';console.error(err)});
   sub('days','days',(x,y)=>(x.order||0)-(y.order||0));
   setTimeout(()=>{if(!S.days.length){conn.hidden=false;conn.textContent='내용을 불러오지 못하고 있어요. 카카오톡 안에서 열었다면 오른쪽 아래 메뉴에서 Safari(또는 Chrome)로 열어주세요.'}},10000);
   sub('refs','refs',(x,y)=>(y.createdAt||0)-(x.createdAt||0));
   sub('outfits','outfits',(x,y)=>(x.createdAt||0)-(y.createdAt||0));
+  sub('looks','looks');
   sub('shop','shop');
   sub('tips','tips');
   sub('pins','pins',(x,y)=>(y.createdAt||0)-(x.createdAt||0));
