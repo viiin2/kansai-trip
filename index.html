@@ -145,6 +145,7 @@ main{padding-block:26px 40px}
 .who{display:inline-block;font-size:11px;border-radius:99px;padding:0 8px}
 .who-수빈{background:var(--shu-soft);color:var(--shu)}
 .who-언니{background:var(--ai-soft);color:var(--ai)}
+.who-이령{background:var(--ai-soft);color:var(--ai)}
 .who-같이{background:var(--matcha-soft);color:var(--matcha)}
 .empty{border:1px dashed var(--frame);padding:30px 18px;text-align:center;color:var(--ink-2);background:rgba(252,251,251,.6)}
 .empty b{display:block;color:var(--ink);font-family:var(--f-display);font-weight:400;font-size:17px;margin-bottom:4px}
@@ -206,6 +207,47 @@ main{padding-block:26px 40px}
 .addcell{border:1px dashed var(--frame);background:none;padding:10px;color:var(--ink-2);font-size:13px}
 .kimono-day{background:var(--shu-soft);border:1px solid var(--shu);border-radius:99px;padding:0 8px;color:var(--shu);font-size:11px;justify-self:start}
 @media (max-width:640px){.orow{grid-template-columns:1fr 1fr}.orow .od{grid-column:1/-1;grid-auto-flow:column;justify-content:start;align-items:center;gap:10px}}
+
+/* ---- outfit cards ---- */
+.daychips{display:flex;gap:6px;overflow-x:auto;padding:2px 0 12px;scrollbar-width:none}
+.daychips::-webkit-scrollbar{display:none}
+.daychips .chip{flex:none}
+.dcard{background:var(--sheet);border:1px solid var(--frame);padding:16px;display:grid;gap:16px;min-width:0}
+.dnav{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.dnav .mini:disabled{opacity:.35}
+.dtitle{display:grid;gap:2px;justify-items:center;text-align:center;min-width:0}
+.dtitle b{font-family:var(--f-thin);font-weight:400;font-size:24px}
+.dtitle>span:not(.kimono-day){font-size:13px;color:var(--ink-2)}
+.looks{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+.look{background:var(--paper);border:1px solid var(--line);padding:12px;display:grid;gap:12px;min-width:0}
+.lhead{display:flex;align-items:center;justify-content:space-between}
+.lempty{padding:22px 8px;text-align:center;color:var(--ink-2);font-size:13px;border:1px dashed var(--frame)}
+.lcollage{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;justify-content:center}
+.lpiece{display:grid;gap:4px;justify-items:center;background:none;border:0;padding:0}
+.lpiece .limg{display:block;width:96px;aspect-ratio:3/4;overflow:hidden;background:var(--ai-soft);border:3px solid var(--sheet);box-shadow:0 1px 3px rgba(74,68,72,.12)}
+.lpiece.big .limg{width:140px}
+.lpiece small{font-size:12px;color:var(--ink-2)}
+.limg img,.ph img,.othumb img{width:100%;height:100%;object-fit:cover;display:block}
+.nophoto{width:100%;height:100%;display:grid;place-items:center;font-family:var(--f-kanji);font-weight:900;font-size:13px;color:var(--ink-2);padding:4px;text-align:center;box-sizing:border-box}
+.lstrip{display:grid;gap:6px;min-width:0}
+.lrail{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 2px 8px;min-width:0}
+.ocard{flex:none;width:96px;scroll-snap-align:start;background:var(--sheet);border:2px solid transparent;padding:3px;text-align:left;display:grid;gap:3px}
+.ocard.on{border-color:var(--shu)}
+.ocard .ph{display:block;aspect-ratio:3/4;overflow:hidden;background:var(--ai-soft)}
+.ocard small{font-size:11px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.upbar{display:grid;gap:8px;border-top:1px dotted var(--line);padding-top:10px;min-width:0}
+.catchips{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;scrollbar-width:none}
+.catchips .chip{flex:none}
+.upbtns{display:flex;gap:6px;flex-wrap:wrap}
+.ovall{display:grid;gap:8px}
+.ovrow{display:grid;grid-template-columns:86px 1fr 1fr;gap:10px;align-items:start;background:var(--sheet);border:1px solid var(--frame);padding:10px 12px}
+.ovrow.ovhead{background:none;border:0;padding:0 12px}
+.ovrow .od{display:grid;gap:2px}
+.ovrow .od b{font-family:var(--f-thin);font-weight:400;font-size:17px}
+.ovcell{display:flex;flex-wrap:wrap;gap:5px;min-width:0}
+.othumb{width:46px;height:58px;padding:0;border:2px solid var(--sheet);background:var(--ai-soft);overflow:hidden}
+@media (max-width:640px){.looks{grid-template-columns:1fr}.ovrow{grid-template-columns:64px 1fr 1fr;padding:8px}.lpiece .limg{width:84px}.lpiece.big .limg{width:124px}.ocard{width:84px}.ovrow .od b{font-size:15px}}
+
 
 /* ---- shop: product cards ---- */
 .tally{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:24px}
@@ -343,6 +385,10 @@ textarea{min-height:84px;resize:vertical}
 .lpeople>div{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;font-size:13px;color:var(--ink-2)}
 .lpeople b,.lsettle b{color:var(--ink);font-weight:400;font-family:var(--f-thin);font-size:17px}
 .lsettle{background:var(--shu-soft)}
+.lsettle .mini{margin-left:auto}
+.lsd{font-size:12px;color:var(--ink-2)}
+.erow.done{opacity:.55}
+.setchk{display:flex;gap:8px;align-items:center;font-size:14px}
 .lrate{grid-column:1/-1;border-top:1px solid var(--line);border-right:0!important;display:flex!important;justify-content:space-between;align-items:center;font-size:13px;color:var(--ink-2);padding:8px 16px!important;background:var(--paper)}
 .ci{width:40px;height:40px;border-radius:50%;border:1px solid var(--frame);display:grid;place-items:center;font-family:var(--f-kanji);font-weight:900;font-size:16px;color:var(--ai);background:var(--sheet);flex:none}
 .ci.sm{width:28px;height:28px;font-size:12px}
@@ -463,7 +509,7 @@ const TIPCAT=['교통','쇼핑·면세','사진','음식','오타쿠','예약','
 const CITY={osaka:['大阪','c-osaka'],kyoto:['京都','c-kyoto'],move:['移動','c-move'],home:['帰国','c-move']};
 
 const S={days:[],refs:[],outfits:[],shop:[],tips:[],pins:[],notes:[],expenses:[],settings:{},cover:{imgs:[]},loaded:false};
-const UI={expDay:'전체',tab:'plan',refTag:'전체',refDay:'전체',shopView:'전체',shopWho:'전체'};
+const UI={expDay:'전체',tab:'plan',refTag:'전체',refDay:'전체',shopView:'전체',shopWho:'전체',outView:'card',outCat:'상의',outDay:null,pick:{}};
 let db=null, assets=null, sample=null, canWrite=true;
 
 const $=s=>document.querySelector(s);
@@ -533,18 +579,59 @@ function renderPhoto(){
   el.innerHTML=html;$('#c-photo').textContent=S.refs.length;
 }
 
+const OUTCATS=['상의','아우터','원피스','하의','치마','악세사리','모자','신발','가방','기타'];
+const BIGCATS=['상의','아우터','원피스','하의','치마'];
+const ownorm=o=>(o.who==='언니'?'이령':(o.who||'수빈'));
+const ocat=o=>OUTCATS.includes(o.cat)?o.cat:'기타';
+const outOf=(dayId,w)=>S.outfits.filter(o=>o.day===dayId&&ownorm(o)===w);
+const pickOf=(dayId,w,c,items)=>{const id=UI.pick[dayId+'|'+w+'|'+c];return items.find(o=>o.id===id&&ocat(o)===c)||items.find(o=>ocat(o)===c)};
+const thumbHTML=o=>o.img?'<img alt="" src="'+img(o.img)+'">':'<span class="nophoto">'+esc(o.title||ocat(o))+'</span>';
+function lookPreview(dayId,w){
+  const items=outOf(dayId,w);if(!items.length)return '<div class="lempty">아직 코디 사진이 없어요</div>';
+  const cats=OUTCATS.filter(c=>items.some(o=>ocat(o)===c));
+  const picks=cats.map(c=>pickOf(dayId,w,c,items)).filter(Boolean);
+  return '<div class="lcollage">'+picks.map(o=>'<button class="lpiece'+(BIGCATS.includes(ocat(o))?' big':'')+'" data-act="editOutfit" data-id="'+o.id+'" aria-label="'+esc(ocat(o))+' 수정"><span class="limg">'+thumbHTML(o)+'</span><small>'+esc(ocat(o))+'</small></button>').join('')+'</div>';
+}
+function lookBlock(d,w){
+  const items=outOf(d.id,w);const cats=OUTCATS.filter(c=>items.some(o=>ocat(o)===c));
+  const canEdit=canWrite&&db;
+  return '<section class="look" aria-label="'+w+' 코디">'+
+    '<div class="lhead"><span class="who who-'+w+'">'+w+'</span><span class="muted num" style="font-size:13px">'+items.length+'개</span></div>'+
+    '<div class="lprev">'+lookPreview(d.id,w)+'</div>'+
+    cats.map(c=>{const list=items.filter(o=>ocat(o)===c);const pk=pickOf(d.id,w,c,items);
+      return '<div class="lstrip"><span class="lab">'+c+'</span><div class="lrail">'+list.map(o=>'<button class="ocard'+(pk&&pk.id===o.id?' on':'')+'" data-act="pickOut" data-day="'+d.id+'" data-who="'+w+'" data-cat="'+c+'" data-id="'+o.id+'"><span class="ph">'+thumbHTML(o)+'</span><small>'+esc(o.title||c)+'</small></button>').join('')+'</div></div>'}).join('')+
+    (canEdit?'<div class="upbar"><div class="chips catchips">'+OUTCATS.map(c=>'<button type="button" class="chip" aria-pressed="'+(UI.outCat===c)+'" data-act="outCat" data-v="'+c+'">'+c+'</button>').join('')+'</div>'+
+      '<div class="upbtns"><button class="mini" data-act="bulkOut" data-day="'+d.id+'" data-who="'+w+'">사진 올리기</button><button class="mini" data-act="pasteOut" data-day="'+d.id+'" data-who="'+w+'">붙여넣기</button><button class="mini" data-act="addOutfit" data-day="'+d.id+'" data-who="'+w+'">+ 직접 추가</button></div></div>':'')+
+    '</section>';
+}
 function renderOutfit(){
   const el=$('#p-outfit');
-  let html='<div class="panel-head"><div><div class="label">Outfits</div><h2>날짜별 코디</h2></div></div>';
-  if(!S.days.length){html+='<div class="empty"><b>일정을 불러오는 중이에요</b>날짜가 생기면 수빈·언니 칸이 날짜마다 만들어져요.</div>';el.innerHTML=html;return}
-  html+='<div class="otable">'+S.days.map(d=>{
-    const cell=w=>{const items=S.outfits.filter(o=>o.day===d.id&&o.who===w);
-      return '<div class="ocell"><span class="lab"><span class="who who-'+w+'">'+w+'</span></span>'+items.map(o=>'<button class="oitem" data-act="editOutfit" data-id="'+o.id+'">'+(o.img?'<img class="thumb" alt="" src="'+img(o.img)+'">':'<span class="thumb none">服</span>')+'<span class="ot"><b>'+esc(o.title)+'</b><small>'+esc(o.items||'')+'</small></span></button>').join('')+
-      (canWrite&&db?'<button class="addcell" data-act="addOutfit" data-day="'+d.id+'" data-who="'+w+'">+ '+w+' 코디</button>':(items.length?'':'<span class="muted" style="font-size:13px">아직 없음</span>'))+'</div>'};
-    return '<div class="orow"><div class="od"><b>'+esc(d.date)+' '+esc(d.dow)+'</b><span class="muted" style="font-size:13px">'+esc(d.title)+'</span>'+(d.kimono?'<span class="kimono-day">着物 기모노 날</span>':'')+'</div>'+cell('수빈')+cell('언니')+'</div>'}).join('')+'</div>';
+  let html='<div class="panel-head"><div><div class="label">Outfits</div><h2>날짜별 코디</h2></div><div class="chips" style="justify-content:flex-end">'+[['card','카드'],['all','한눈에']].map(([v,t])=>'<button class="chip" aria-pressed="'+(UI.outView===v)+'" data-act="outView" data-v="'+v+'">'+t+'</button>').join('')+'</div></div>';
+  if(!S.days.length){html+='<div class="empty"><b>일정을 불러오는 중이에요</b>날짜가 생기면 날짜마다 코디 카드가 만들어져요.</div>';el.innerHTML=html;return}
+  if(UI.outView==='all'){
+    html+='<div class="ovall"><div class="ovrow ovhead"><span></span><span class="who who-수빈">수빈</span><span class="who who-이령">이령</span></div>'+
+      S.days.map(d=>'<div class="ovrow"><div class="od"><b class="num">'+esc(d.date)+' '+esc(d.dow)+'</b><small class="muted">'+esc(d.title||'')+'</small></div>'+
+        ['수빈','이령'].map(w=>{const items=outOf(d.id,w);return '<div class="ovcell">'+(items.length?items.map(o=>'<button class="othumb" data-act="editOutfit" data-id="'+o.id+'" aria-label="'+esc(o.title||ocat(o))+' 수정">'+thumbHTML(o)+'</button>').join(''):'<span class="muted" style="font-size:12px">—</span>')+'</div>'}).join('')+'</div>').join('')+'</div>';
+    el.innerHTML=html;$('#c-outfit').textContent=S.outfits.length;return;
+  }
+  const days=S.days;const cur=days.find(d=>d.id===UI.outDay)||days[0];UI.outDay=cur.id;const ci=days.indexOf(cur);
+  html+='<div class="daychips" role="group" aria-label="날짜 고르기">'+days.map(d=>'<button class="chip" aria-pressed="'+(d.id===cur.id)+'" data-act="outDay" data-v="'+d.id+'">'+esc(d.date)+' '+esc(d.dow)+'</button>').join('')+'</div>';
+  html+='<article class="dcard"><div class="dnav"><button class="mini" data-act="outStep" data-v="-1"'+(ci<=0?' disabled':'')+' aria-label="이전 날">‹ 이전</button>'+
+    '<div class="dtitle"><b class="num">'+esc(cur.date)+' '+esc(cur.dow)+'</b><span>'+esc(cur.title||'')+'</span>'+(cur.kimono?'<span class="kimono-day">着物 기모노 날</span>':'')+'</div>'+
+    '<button class="mini" data-act="outStep" data-v="1"'+(ci>=days.length-1?' disabled':'')+' aria-label="다음 날">다음 ›</button></div>'+
+    '<div class="looks">'+['수빈','이령'].map(w=>lookBlock(cur,w)).join('')+'</div></article>';
   el.innerHTML=html;$('#c-outfit').textContent=S.outfits.length;
 }
-
+let outBusy=false;
+async function uploadOutfits(files,day,who){
+  if(!files.length||outBusy||!db||!assets)return;outBusy=true;let ok=0,fail=0;const t0=Date.now(),cat=UI.outCat;
+  toast(files.length+'장 올리는 중이에요');
+  for(let i=0;i<files.length;i++){
+    try{const id=await upload(files[i]);await db.collection('outfits').add({img:id,cat,title:'',note:'',day,who,createdAt:t0+i});ok++}
+    catch(e){fail++;if(e&&e.code==='quota_or_state')break}
+  }
+  outBusy=false;toast(ok+'장 올렸어요'+(fail?' · '+fail+'장은 실패했어요':''));
+}
 function renderShop(){
   const el=$('#p-shop');
   let list=S.shop.slice().sort((a,b)=>(a.bought===b.bought?0:a.bought?1:-1)||(b.fav?1:0)-(a.fav?1:0)||(a.createdAt||0)-(b.createdAt||0));
@@ -662,15 +749,16 @@ const catK=c=>(CATS.find(x=>x[0]===c)||['','他'])[1];
 function renderLedger(){
   const el=$('#p-ledger');const all=S.expenses;
   const total=all.reduce((s,e)=>s+krw(e),0), totalY=all.filter(e=>e.cur!=='KRW').reduce((s,e)=>s+(Number(e.amount)||0),0);
+  const open=all.filter(e=>!e.settled), doneSum=all.filter(e=>e.settled).reduce((s,e)=>s+krw(e),0);
   const paid={},share={};PEOPLE.forEach(p=>{paid[p]=0;share[p]=0});
-  all.forEach(e=>{const v=krw(e);if(e.payer in paid)paid[e.payer]+=v;const ws=(e.with||[]).filter(p=>p in share);const list=ws.length?ws:PEOPLE;list.forEach(p=>share[p]+=v/list.length)});
+  open.forEach(e=>{const v=krw(e);if(e.payer in paid)paid[e.payer]+=v;const ws=(e.with||[]).filter(p=>p in share);const list=ws.length?ws:PEOPLE;list.forEach(p=>share[p]+=v/list.length)});
   const bal=paid['수빈']-share['수빈'];
-  const settle=Math.abs(bal)<1?'정산할 금액이 없어요':(bal>0?'이령 → 수빈':'수빈 → 이령')+' <b class="num">'+won(Math.abs(bal))+'</b>';
+  const settle=(Math.abs(bal)<1?'정산할 금액이 없어요':(bal>0?'이령 → 수빈':'수빈 → 이령')+' <b class="num">'+won(Math.abs(bal))+'</b>')+(doneSum?' <small class="num lsd">정산 끝 '+won(doneSum)+'</small>':'');
   const byCat=CATS.map(([c,k])=>({c,k,v:all.filter(e=>e.cat===c).reduce((s,e)=>s+krw(e),0)})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v);
   let html='<div class="panel-head"><div><div class="label">Budget</div><h2>가계부</h2></div>'+addBtn('addExp','+ 지출 추가')+'</div>';
   html+='<div class="ledsum"><div class="ltotal"><span class="label">total spent</span><b class="num">'+won(total)+'</b><small class="num">엔화 지출 ¥'+Math.round(totalY).toLocaleString('ja-JP')+'</small></div>'+
     '<div class="lpeople">'+PEOPLE.map(p=>'<div><span class="who who-'+(p==='수빈'?'수빈':'언니')+'">'+p+'</span><span>결제 <b class="num">'+won(paid[p])+'</b></span><span>부담 <b class="num">'+won(share[p])+'</b></span></div>').join('')+'</div>'+
-    '<div class="lsettle"><span class="label">settle up</span><span>'+settle+'</span></div>'+
+    '<div class="lsettle"><span class="label">settle up</span><span>'+settle+'</span>'+(open.length&&canWrite&&db?'<button class="mini" data-act="settleAll">정산 끝으로</button>':'')+'</div>'+
     '<div class="lrate"><span>100엔 = <b class="num">'+won(curRate()*100)+'</b></span>'+(canWrite&&db?'<button class="mini" data-act="editRate">환율 수정</button>':'')+'</div></div>';
   if(byCat.length)html+='<div class="catbars">'+byCat.map(x=>'<div class="cb"><span class="ci sm">'+x.k+'</span><span class="cn">'+x.c+'</span><span class="bar"><i style="width:'+Math.max(3,Math.round(x.v/total*100))+'%"></i></span><span class="cv num">'+won(x.v)+'</span></div>').join('')+'</div>';
   const ids=['전체','prep'].concat(S.days.map(d=>d.id));
@@ -679,7 +767,7 @@ function renderLedger(){
   if(!list.length)html+='<div class="empty"><b>'+(all.length?'이 날은 지출이 없어요':'아직 지출이 없어요')+'</b>'+(all.length?'':'"지출 추가"로 첫 지출을 적어보세요.')+'</div>';
   else{const order=['prep'].concat(S.days.map(d=>d.id),['']);const groups=order.map(id=>({id,items:list.filter(e=>(e.day||'')===id)})).filter(g=>g.items.length);
     html+='<div class="egroups">'+groups.map(g=>'<section class="egroup"><div class="eh"><span>'+esc(dayName(g.id))+'</span><span class="num">'+won(g.items.reduce((s,e)=>s+krw(e),0))+'</span></div>'+
-      g.items.map(e=>'<button class="erow" data-act="editExp" data-id="'+e.id+'"><span class="ci">'+catK(e.cat)+'</span><span class="em"><b>'+esc(e.name)+'</b><small>'+esc(e.cat||'기타')+' · '+esc(e.pay||'')+' · '+esc(e.payer||'')+' 결제 · 함께 '+((e.with||[]).length||PEOPLE.length)+'명</small></span><span class="ea"><b class="num">'+(e.cur==='KRW'?won(e.amount):'¥'+(Number(e.amount)||0).toLocaleString('ja-JP'))+'</b>'+(e.cur==='KRW'?'':'<small class="num">'+won(krw(e))+'</small>')+'</span></button>').join('')+'</section>').join('')+'</div>'}
+      g.items.map(e=>'<button class="erow'+(e.settled?' done':'')+'" data-act="editExp" data-id="'+e.id+'"><span class="ci">'+catK(e.cat)+'</span><span class="em"><b>'+esc(e.name)+'</b><small>'+esc(e.cat||'기타')+' · '+esc(e.pay||'')+' · '+esc(e.payer||'')+' 결제 · 함께 '+((e.with||[]).length||PEOPLE.length)+'명'+(e.settled?' · 정산 끝':'')+'</small></span><span class="ea"><b class="num">'+(e.cur==='KRW'?won(e.amount):'¥'+(Number(e.amount)||0).toLocaleString('ja-JP'))+'</b>'+(e.cur==='KRW'?'':'<small class="num">'+won(krw(e))+'</small>')+'</span></button>').join('')+'</section>').join('')+'</div>'}
   el.innerHTML=html;
 }
 function openExpense(e){
@@ -694,7 +782,7 @@ function openExpense(e){
    '<div class="field"><label for="xName">항목명</label><input id="xName" type="text" placeholder="예) 라피트 편도, 이치란 라멘" value="'+esc(v.name)+'"></div>'+
    '<div class="field"><span class="lab">카테고리</span><div class="catgrid" id="xCat">'+CATS.map(([c,k])=>'<button type="button" data-v="'+c+'" aria-pressed="'+(v.cat===c)+'"><span class="ci">'+k+'</span><span>'+c+'</span></button>').join('')+'</div></div>'+
    '<div class="field"><div class="pplhead"><span class="lab">함께한 사람</span><span class="cols"><span>결제</span><span>함께</span></span></div>'+PEOPLE.map(p=>'<div class="pplrow"><span class="av">'+p.slice(-1)+'</span><b>'+p+'</b><button type="button" class="pc" data-payer="'+p+'" aria-label="'+p+' 결제" aria-pressed="'+(v.payer===p)+'">✓</button><button type="button" class="pc" data-with="'+p+'" aria-label="'+p+' 함께" aria-pressed="'+v.with.includes(p)+'">✓</button></div>').join('')+'</div>'+
-   '<div class="sheet-actions">'+(isNew?'':'<button class="btn ghost danger" id="xDel">삭제</button>')+'<div class="r"><button class="btn ghost" id="xClose">닫기</button><button class="btn" id="xSave">완료</button></div></div></div></div>';
+   '<label class="setchk"><input type="checkbox" id="xSet"'+(v.settled?' checked':'')+'> 이미 정산했어요 (정산 금액에서 뺄게요)</label>'+'<div class="sheet-actions">'+(isNew?'':'<button class="btn ghost danger" id="xDel">삭제</button>')+'<div class="r"><button class="btn ghost" id="xClose">닫기</button><button class="btn" id="xSave">완료</button></div></div></div></div>';
   const ov=$('#ov'),amt=$('#xAmt');
   const conv=()=>{const n=Number(String(amt.value).replace(/[^\d.]/g,''))||0;$('#xConv').textContent=v.cur==='JPY'?'= '+won(n*curRate())+' (1엔당 ₩'+curRate().toFixed(2)+')':'= ¥'+Math.round(n/curRate()).toLocaleString('ja-JP')};
   conv();amt.addEventListener('input',conv);
@@ -710,7 +798,7 @@ function openExpense(e){
     const name=$('#xName').value.trim();if(!name){toast('항목명을 적어주세요');$('#xName').focus();return}
     if(!v.cat){toast('카테고리를 골라주세요');return}
     if(!v.with.length){toast('함께한 사람을 한 명 이상 골라주세요');return}
-    const body={amount:n,cur:v.cur,day:$('#xDay').value,pay:v.pay,name,cat:v.cat,payer:v.payer,with:v.with,rate:v.cur==='JPY'?(e&&e.cur==='JPY'&&e.rate?e.rate:curRate()):null,createdAt:(e&&e.createdAt)||Date.now()};
+    const body={amount:n,cur:v.cur,day:$('#xDay').value,pay:v.pay,name,cat:v.cat,payer:v.payer,with:v.with,rate:v.cur==='JPY'?(e&&e.cur==='JPY'&&e.rate?e.rate:curRate()):null,settled:!!$('#xSet').checked,createdAt:(e&&e.createdAt)||Date.now()};
     $('#xSave').disabled=true;
     try{if(isNew)await db.collection('expenses').add(body);else await db.collection('expenses').doc(e.id).set(body);closeSheet();toast('저장했어요')}catch(err){$('#xSave').disabled=false;toast(writeMsg(err))}};
   const del=$('#xDel');if(del)del.onclick=async()=>{if(!del.dataset.armed){del.dataset.armed='1';del.textContent='한 번 더 누르면 삭제';setTimeout(()=>{del.dataset.armed='';del.textContent='삭제'},3500);return}
@@ -801,7 +889,8 @@ async function removeDoc(col,item){await db.collection(col).doc(item.id).delete(
 
 const refFields=[{key:'img',label:'레퍼런스 사진',type:'image'},{key:'tags',label:'키워드',type:'multi',options:TAGS,custom:true}];
 const needRef=v=>(v.img||(v.tags||[]).length)?null:'사진이나 키워드를 하나 넣어주세요';
-const outfitFields=[{key:'img',label:'코디 사진',type:'image'},{key:'title',label:'코디 이름',ph:'예) 아이보리 니트 + 브라운 롱스커트'},{key:'items',label:'아이템',type:'textarea',ph:'예) 니트, 롱스커트, 로퍼, 베레모'},{key:'note',label:'메모',type:'textarea',ph:'예) 기모노 반납 후 갈아입기 편하게'},{key:'day',label:'날짜',type:'select',options:[]},{key:'who',label:'누구 코디?',type:'seg',options:['수빈','언니']}];
+const outfitFields=[{key:'img',label:'사진',type:'image'},{key:'cat',label:'종류',type:'seg',options:OUTCATS},{key:'title',label:'이름 (선택)',ph:'예) 아이보리 니트, 브라운 롱스커트'},{key:'note',label:'메모',type:'textarea',ph:'예) 기모노 반납 후 갈아입기 편하게'},{key:'day',label:'날짜',type:'select',options:[]},{key:'who',label:'누구 코디?',type:'seg',options:['수빈','이령']}];
+const needOut=v=>((v.img||(v.title||'').trim())?null:'사진이나 이름을 넣어주세요');
 const shopFields=[{key:'img',label:'사진',type:'image'},{key:'name',label:'물건 이름',ph:'예) 포켓몬센터 한정 인형'},{key:'cat',label:'종류',type:'seg',options:SHOPCAT},{key:'where',label:'어디서',ph:'예) 다이마루 신사이바시'},{key:'price',label:'가격 (엔, 세금 포함)',type:'number',ph:'0'},{key:'qty',label:'개수',type:'number',ph:'1'},{key:'who',label:'누구 거?',type:'seg',options:WHO},{key:'fav',label:'찜',type:'check',text:'♡ 찜하기'},{key:'taxfree',label:'면세',type:'check',text:'면세 등록함 (공항에서 환급받을 물건)'},{key:'bought',label:'상태',type:'check',text:'샀어요'},{key:'note',label:'메모',type:'textarea',ph:'예) 사이즈 M, 언니 부탁'},{key:'link',label:'참고 링크',type:'url',ph:'https://'}];
 const tipFields=[{key:'title',label:'제목'},{key:'cat',label:'분류',type:'seg',options:TIPCAT},{key:'bulletsText',label:'내용 (한 줄에 하나)',type:'textarea'},{key:'link',label:'원문 링크',type:'url'},{key:'who',label:'누가 찾았어?',type:'seg',options:WHO}];
 const withDays=fs=>fs.map(f=>f.key==='day'?Object.assign({},f,{options:dayOpts()}):f);
@@ -819,6 +908,13 @@ document.addEventListener('click',async e=>{
   else if(a==='refDay'){UI.refDay=b.dataset.v;renderPhoto()}
   else if(a==='goRefs'){UI.refDay=b.dataset.day;UI.refTag='전체';renderPhoto();setTab('photo');scrollTo({top:0})}
   else if(a==='goOutfit'){setTab('outfit');scrollTo({top:0})}
+  else if(a==='outView'){UI.outView=b.dataset.v;renderOutfit()}
+  else if(a==='outDay'){UI.outDay=b.dataset.v;renderOutfit()}
+  else if(a==='outStep'){const i=S.days.findIndex(d=>d.id===UI.outDay);const n=S.days[i+Number(b.dataset.v)];if(n){UI.outDay=n.id;renderOutfit()}}
+  else if(a==='outCat'){UI.outCat=b.dataset.v;document.querySelectorAll('[data-act="outCat"]').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.v===UI.outCat)))}
+  else if(a==='pickOut'){const k=b.dataset.day+'|'+b.dataset.who+'|'+b.dataset.cat;UI.pick[k]=id;const look=b.closest('.look');if(!look)return;
+    look.querySelectorAll('.ocard').forEach(x=>{if(x.dataset.cat===b.dataset.cat)x.classList.toggle('on',x===b)});
+    look.querySelector('.lprev').innerHTML=lookPreview(b.dataset.day,b.dataset.who)}
   else if(a==='expDay'){UI.expDay=b.dataset.v;renderLedger()}
   else if(a==='shopView'){UI.shopView=b.dataset.v;renderShop()}
   else if(a==='shopWho'){UI.shopWho=b.dataset.v;renderShop()}
@@ -831,11 +927,16 @@ document.addEventListener('click',async e=>{
   else if(a==='addRef')openSheet({title:'사진 레퍼런스 추가',values:{who:'같이',tags:UI.refTag!=='전체'?[UI.refTag]:[]},fields:withDays(refFields),validate:needRef,onSave:v=>saveDoc('refs',null,v)});
   else if(a==='editRef'){const r=S.refs.find(x=>x.id===id);if(!r)return;if(!canWrite){return}
     openSheet({title:'사진 레퍼런스 수정',values:r,fields:withDays(refFields),validate:needRef,onSave:v=>saveDoc('refs',id,Object.assign(v,{example:false}),r),onDelete:()=>removeDoc('refs',r)})}
-  else if(a==='addOutfit')openSheet({title:dayLabel(b.dataset.day)+' '+b.dataset.who+' 코디',values:{day:b.dataset.day,who:b.dataset.who},fields:withDays(outfitFields),validate:needTitle('title'),onSave:v=>saveDoc('outfits',null,v)});
-  else if(a==='editOutfit'){const o=S.outfits.find(x=>x.id===id);if(!o||!canWrite)return;openSheet({title:'코디 수정',values:o,fields:withDays(outfitFields),validate:needTitle('title'),onSave:v=>saveDoc('outfits',id,v,o),onDelete:()=>removeDoc('outfits',o)})}
+  else if(a==='bulkOut'){const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.multiple=true;inp.onchange=()=>uploadOutfits([...inp.files],b.dataset.day,b.dataset.who);inp.click()}
+  else if(a==='pasteOut'){try{const items=await navigator.clipboard.read();const blobs=[];for(const it of items){const ty=it.types.find(x=>/^image\//.test(x));if(ty)blobs.push(await it.getType(ty))}
+      if(blobs.length)uploadOutfits(blobs,b.dataset.day,b.dataset.who);else toast('복사된 사진이 없어요. 사진을 길게 눌러 "이미지 복사" 해주세요')}catch(err){toast('붙여넣기가 안 돼요. "사진 올리기"를 써주세요')}}
+  else if(a==='addOutfit')openSheet({title:dayLabel(b.dataset.day)+' '+b.dataset.who+' 코디',values:{day:b.dataset.day,who:b.dataset.who,cat:UI.outCat},fields:withDays(outfitFields),validate:needOut,onSave:v=>saveDoc('outfits',null,v)});
+  else if(a==='editOutfit'){const o=S.outfits.find(x=>x.id===id);if(!o||!canWrite)return;openSheet({title:'코디 수정',values:Object.assign({},o,{cat:ocat(o),who:ownorm(o)}),fields:withDays(outfitFields),validate:needOut,onSave:v=>saveDoc('outfits',id,v,o),onDelete:()=>removeDoc('outfits',o)})}
   else if(a==='addShop')openSheet({title:'쇼핑 아이템 저장',values:{who:UI.shopWho!=='전체'?UI.shopWho:'수빈',cat:'굿즈',qty:'1'},fields:shopFields,validate:needTitle('name'),onSave:v=>saveDoc('shop',null,v)});
   else if(a==='editShop'){const x=S.shop.find(y=>y.id===id);if(!x||!canWrite)return;openSheet({title:'쇼핑 항목',values:x,fields:shopFields,validate:needTitle('name'),onSave:v=>saveDoc('shop',id,Object.assign(v,{example:false}),x),onDelete:()=>removeDoc('shop',x)})}
   else if(a==='toggleFav'){const x=S.shop.find(y=>y.id===id);if(!x)return;b.disabled=true;try{await db.collection('shop').doc(id).update({fav:!x.fav})}catch(err){toast(writeMsg(err))}finally{b.disabled=false}}
+  else if(a==='settleAll'){if(!b.dataset.armed){b.dataset.armed='1';b.textContent='한 번 더 누르면 정산 끝';setTimeout(()=>{b.dataset.armed='';b.textContent='정산 끝으로'},3500);return}
+    const open=S.expenses.filter(x=>!x.settled);b.disabled=true;try{await Promise.all(open.map(x=>db.collection('expenses').doc(x.id).update({settled:true})));toast(open.length+'건을 정산 끝으로 바꿨어요')}catch(err){toast(writeMsg(err))}finally{b.disabled=false}}
   else if(a==='addExp')openExpense(null);
   else if(a==='editExp'){const x=S.expenses.find(y=>y.id===id);if(x&&canWrite)openExpense(x)}
   else if(a==='editRate')openSheet({title:'환율 수정',values:{rate100:String(Math.round(curRate()*1000)/10)},fields:[{key:'rate100',label:'100엔당 원화',type:'number',hint:'환전한 환율로 바꿔두면 엔화 지출이 원화로 계산돼요. 이미 적은 지출은 적을 때 환율 그대로예요.'}],
