@@ -248,6 +248,20 @@ main{padding-block:26px 40px}
 .othumb{width:46px;height:58px;padding:0;border:2px solid var(--sheet);background:var(--ai-soft);overflow:hidden}
 @media (max-width:640px){.looks{grid-template-columns:1fr}.ovrow{grid-template-columns:64px 1fr 1fr;padding:8px}.lpiece .limg{width:84px}.lpiece.big .limg{width:124px}.ocard{width:112px}.ovrow .od b{font-size:15px}}
 
+/* ---- day cards with flat-lay (한눈에) ---- */
+.fdays{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+.fday{background:var(--sheet);border:1px solid var(--frame);border-radius:14px;padding:14px;display:grid;gap:8px;min-width:0;align-content:start}
+.fdh{display:grid;gap:2px}
+.fdh b{font-family:var(--f-thin);font-weight:400;font-size:22px}
+.fdh span:not(.num){font-size:13px;color:var(--ink-2)}
+.fwho{margin-top:4px}
+.flat{display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:center;background:#fff;border-radius:10px;padding:8px;min-height:120px}
+.flat-empty{place-items:center;font-size:13px;color:var(--ink-2)}
+.fcol{display:grid;gap:6px;align-content:center;min-width:0}
+.fitem{background:none;border:0;padding:0;min-width:0;display:block}
+.fitem img{display:block;width:100%;height:auto;max-height:120px;object-fit:contain}
+.fitem .nophoto{min-height:60px;font-size:12px}
+
 /* ---- wardrobe grid (한눈에) ---- */
 .wdays{display:grid;gap:14px}
 .wday{background:var(--sheet);border:1px solid var(--frame);padding:14px;display:grid;gap:10px;min-width:0}
@@ -617,10 +631,14 @@ function renderOutfit(){
   if(!S.days.length){html+='<div class="empty"><b>일정을 불러오는 중이에요</b>날짜가 생기면 날짜마다 코디 카드가 만들어져요.</div>';el.innerHTML=html;return}
   if(UI.outView==='all'){
     const byCat=(a,b)=>OUTCATS.indexOf(ocat(a))-OUTCATS.indexOf(ocat(b));
-    html+='<div class="wdays">'+S.days.map(d=>'<section class="wday"><div class="wdh"><b class="num">'+esc(d.date)+' '+esc(d.dow)+'</b><span>'+esc(d.title||'')+'</span></div>'+
+    const LEFT=['상의','아우터','원피스','하의','치마'];
+    const cell=o=>'<button class="fitem" data-act="editOutfit" data-id="'+o.id+'" aria-label="'+esc(o.title||ocat(o))+' 수정">'+thumbHTML(o)+'</button>';
+    html+='<div class="fdays">'+S.days.map(d=>'<article class="fday"><header class="fdh"><b class="num">'+esc(d.date)+' '+esc(d.dow)+'</b><span>'+esc(d.title||'')+'</span></header>'+
       ['수빈','이령'].map(w=>{const items=outOf(d.id,w).slice().sort(byCat);
-        return '<div class="wwho"><span class="who who-'+w+'">'+w+'</span></div><div class="wgrid">'+(items.length?items.map(o=>'<button class="wtile" data-act="editOutfit" data-id="'+o.id+'" aria-label="'+esc(o.title||ocat(o))+' 수정">'+thumbHTML(o)+'</button>').join(''):'<span class="muted wempty">아직 없어요</span>')+'</div>'}).join('')+
-      '</section>').join('')+'</div>';
+        if(!items.length)return '<div class="fwho"><span class="who who-'+w+'">'+w+'</span></div><div class="flat flat-empty">아직 없어요</div>';
+        const L=items.filter(o=>LEFT.includes(ocat(o))), R=items.filter(o=>!LEFT.includes(ocat(o)));
+        return '<div class="fwho"><span class="who who-'+w+'">'+w+'</span></div><div class="flat"><div class="fcol">'+L.map(cell).join('')+'</div><div class="fcol">'+R.map(cell).join('')+'</div></div>';
+      }).join('')+'</article>').join('')+'</div>';
     el.innerHTML=html;$('#c-outfit').textContent=S.outfits.length;return;
   }
   const days=S.days;const cur=days.find(d=>d.id===UI.outDay)||days[0];UI.outDay=cur.id;const ci=days.indexOf(cur);
