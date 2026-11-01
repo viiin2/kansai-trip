@@ -230,8 +230,8 @@ main{padding-block:26px 40px}
 .limg img,.ph img,.othumb img{width:100%;height:100%;object-fit:cover;display:block}
 .nophoto{width:100%;height:100%;display:grid;place-items:center;font-family:var(--f-kanji);font-weight:900;font-size:13px;color:var(--ink-2);padding:4px;text-align:center;box-sizing:border-box}
 .lstrip{display:grid;gap:6px;min-width:0}
-.lrail{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 2px 8px;min-width:0}
-.ocard{flex:none;width:96px;scroll-snap-align:start;background:var(--sheet);border:2px solid transparent;padding:3px;text-align:left;display:grid;gap:3px}
+.lrail{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 2px 8px;min-width:0;scroll-padding:0 50%}
+.ocard{flex:none;width:132px;scroll-snap-align:center;background:var(--sheet);border:2px solid transparent;padding:3px;text-align:left;display:grid;gap:3px}
 .ocard.on{border-color:var(--shu)}
 .ocard .ph{display:block;aspect-ratio:3/4;overflow:hidden;background:var(--ai-soft)}
 .ocard small{font-size:11px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -246,7 +246,7 @@ main{padding-block:26px 40px}
 .ovrow .od b{font-family:var(--f-thin);font-weight:400;font-size:17px}
 .ovcell{display:flex;flex-wrap:wrap;gap:5px;min-width:0}
 .othumb{width:46px;height:58px;padding:0;border:2px solid var(--sheet);background:var(--ai-soft);overflow:hidden}
-@media (max-width:640px){.looks{grid-template-columns:1fr}.ovrow{grid-template-columns:64px 1fr 1fr;padding:8px}.lpiece .limg{width:84px}.lpiece.big .limg{width:124px}.ocard{width:84px}.ovrow .od b{font-size:15px}}
+@media (max-width:640px){.looks{grid-template-columns:1fr}.ovrow{grid-template-columns:64px 1fr 1fr;padding:8px}.lpiece .limg{width:84px}.lpiece.big .limg{width:124px}.ocard{width:112px}.ovrow .od b{font-size:15px}}
 
 
 /* ---- shop: product cards ---- */
@@ -586,18 +586,12 @@ const ocat=o=>OUTCATS.includes(o.cat)?o.cat:'기타';
 const outOf=(dayId,w)=>S.outfits.filter(o=>o.day===dayId&&ownorm(o)===w);
 const pickOf=(dayId,w,c,items)=>{const id=UI.pick[dayId+'|'+w+'|'+c];return items.find(o=>o.id===id&&ocat(o)===c)||items.find(o=>ocat(o)===c)};
 const thumbHTML=o=>o.img?'<img alt="" src="'+img(o.img)+'">':'<span class="nophoto">'+esc(o.title||ocat(o))+'</span>';
-function lookPreview(dayId,w){
-  const items=outOf(dayId,w);if(!items.length)return '<div class="lempty">아직 코디 사진이 없어요</div>';
-  const cats=OUTCATS.filter(c=>items.some(o=>ocat(o)===c));
-  const picks=cats.map(c=>pickOf(dayId,w,c,items)).filter(Boolean);
-  return '<div class="lcollage">'+picks.map(o=>'<button class="lpiece'+(BIGCATS.includes(ocat(o))?' big':'')+'" data-act="editOutfit" data-id="'+o.id+'" aria-label="'+esc(ocat(o))+' 수정"><span class="limg">'+thumbHTML(o)+'</span><small>'+esc(ocat(o))+'</small></button>').join('')+'</div>';
-}
 function lookBlock(d,w){
   const items=outOf(d.id,w);const cats=OUTCATS.filter(c=>items.some(o=>ocat(o)===c));
   const canEdit=canWrite&&db;
   return '<section class="look" aria-label="'+w+' 코디">'+
     '<div class="lhead"><span class="who who-'+w+'">'+w+'</span><span class="muted num" style="font-size:13px">'+items.length+'개</span></div>'+
-    '<div class="lprev">'+lookPreview(d.id,w)+'</div>'+
+    
     cats.map(c=>{const list=items.filter(o=>ocat(o)===c);const pk=pickOf(d.id,w,c,items);
       return '<div class="lstrip"><span class="lab">'+c+'</span><div class="lrail">'+list.map(o=>'<button class="ocard'+(pk&&pk.id===o.id?' on':'')+'" data-act="pickOut" data-day="'+d.id+'" data-who="'+w+'" data-cat="'+c+'" data-id="'+o.id+'"><span class="ph">'+thumbHTML(o)+'</span><small>'+esc(o.title||c)+'</small></button>').join('')+'</div></div>'}).join('')+
     (canEdit?'<div class="upbar"><div class="chips catchips">'+OUTCATS.map(c=>'<button type="button" class="chip" aria-pressed="'+(UI.outCat===c)+'" data-act="outCat" data-v="'+c+'">'+c+'</button>').join('')+'</div>'+
@@ -914,7 +908,7 @@ document.addEventListener('click',async e=>{
   else if(a==='outCat'){UI.outCat=b.dataset.v;document.querySelectorAll('[data-act="outCat"]').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.v===UI.outCat)))}
   else if(a==='pickOut'){const k=b.dataset.day+'|'+b.dataset.who+'|'+b.dataset.cat;UI.pick[k]=id;const look=b.closest('.look');if(!look)return;
     look.querySelectorAll('.ocard').forEach(x=>{if(x.dataset.cat===b.dataset.cat)x.classList.toggle('on',x===b)});
-    look.querySelector('.lprev').innerHTML=lookPreview(b.dataset.day,b.dataset.who)}
+  }
   else if(a==='expDay'){UI.expDay=b.dataset.v;renderLedger()}
   else if(a==='shopView'){UI.shopView=b.dataset.v;renderShop()}
   else if(a==='shopWho'){UI.shopWho=b.dataset.v;renderShop()}
