@@ -129,6 +129,7 @@ nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:r
 main{padding-block:26px 40px}
 .panel-head{display:grid;gap:10px;justify-items:center;text-align:center;margin-bottom:26px}
 .panel-head>div{display:grid;justify-items:center;gap:2px}
+.panel-head>.chips{display:flex;gap:6px}
 .panel-head .label{font-family:var(--f-wm);font-style:normal;font-size:26px;color:var(--shu);line-height:1.1}
 .panel-head h2{font-size:26px}
 .panel-head h2::before,.panel-head h2::after{content:" ✦ ";color:var(--frame);font-size:14px;vertical-align:middle}
@@ -261,6 +262,30 @@ main{padding-block:26px 40px}
 .fitem{background:none;border:0;padding:0;min-width:0;display:block}
 .fitem img{display:block;width:100%;height:auto;max-height:120px;object-fit:contain}
 .fitem .nophoto{min-height:60px;font-size:12px}
+
+/* ---- mix & match (맞춰보기) ---- */
+.mix{display:grid;gap:12px;max-width:560px;margin:0 auto;min-width:0}
+.mixbar{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.mixbar small{font-size:12px;color:var(--ink-2)}
+.mboard{background:#fff;border:1px solid var(--frame);border-radius:14px;padding:10px 0 12px;display:grid;gap:6px;min-width:0}
+.mrow{display:grid;gap:4px;min-width:0}
+.mhead{display:flex;align-items:center;gap:8px;padding:0 14px;min-height:26px}
+.mhead b{font-size:13px;font-weight:700}
+.mhead .mcount{font-size:12px;color:var(--ink-2)}
+.mhead .mini{margin-left:auto}
+.mwrap{position:relative;min-width:0}
+.mrail{position:relative;display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+.mrail::-webkit-scrollbar{display:none}
+.mrail::before,.mrail::after{content:"";flex:0 0 calc(18% - 10px)}
+.mitem{flex:0 0 64%;scroll-snap-align:center;height:clamp(150px,30vh,290px);background:none;border:0;padding:0;opacity:.35;transition:opacity .2s}
+.mitem.on{opacity:1}
+.mitem img{width:100%;height:100%;object-fit:contain;display:block}
+.mitem .nophoto{font-size:14px}
+.marrow{position:absolute;top:50%;transform:translateY(-50%);z-index:1;width:34px;height:34px;border-radius:50%;border:1px solid var(--frame);background:var(--sheet);color:var(--ink-2);font-size:20px;line-height:1;display:grid;place-items:center;padding:0}
+.marrow.prev{left:8px}.marrow.next{right:8px}
+.marrow:disabled{opacity:0;pointer-events:none}
+.mdiv{border-top:1px dotted var(--line);margin:4px 14px 2px}
+.mempty{margin:0 14px;height:clamp(120px,22vh,200px);display:grid;place-items:center;align-content:center;gap:8px;border:1px dashed var(--frame);border-radius:10px;color:var(--ink-2);font-size:13px;text-align:center;padding:8px}
 
 /* ---- wardrobe grid (한눈에) ---- */
 .wdays{display:grid;gap:14px}
@@ -536,7 +561,7 @@ const TIPCAT=['교통','쇼핑·면세','사진','음식','오타쿠','예약','
 const CITY={osaka:['大阪','c-osaka'],kyoto:['京都','c-kyoto'],move:['移動','c-move'],home:['帰国','c-move']};
 
 const S={days:[],refs:[],outfits:[],shop:[],tips:[],pins:[],notes:[],expenses:[],settings:{},cover:{imgs:[]},loaded:false};
-const UI={expDay:'전체',tab:'plan',refTag:'전체',refDay:'전체',shopView:'전체',shopWho:'전체',outView:'card',outCat:'상의',outDay:null,pick:{}};
+const UI={expDay:'전체',tab:'plan',refTag:'전체',refDay:'전체',shopView:'전체',shopWho:'전체',outView:'mix',outCat:'상의',outDay:null,pick:{},mixWho:store('mixWho')==='이령'?'이령':'수빈',mixPos:{}};
 let db=null, assets=null, sample=null, canWrite=true;
 
 const $=s=>document.querySelector(s);
@@ -565,7 +590,8 @@ $('#track').innerHTML=days.map((x,i)=>'<li class="'+(i<k?'done':i===k?'now':'')+
 
 /* tabs */
 function setTab(t){UI.tab=t;document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===t));
-document.querySelectorAll('[data-panel]').forEach(p=>p.hidden=p.dataset.panel!==t);store('tab',t)}
+document.querySelectorAll('[data-panel]').forEach(p=>p.hidden=p.dataset.panel!==t);store('tab',t);
+if(t==='outfit')requestAnimationFrame(()=>mixRestore(false))}
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{setTab(b.dataset.tab);
   const nav=document.querySelector('nav.tabs');const m=document.querySelector('main');const mob=window.matchMedia('(max-width:640px)').matches;
   const off=mob?0:nav.offsetHeight;const y=m.getBoundingClientRect().top+window.scrollY-off;
@@ -625,9 +651,41 @@ function lookBlock(d,w){
       '<div class="upbtns"><button class="mini" data-act="bulkOut" data-day="'+d.id+'" data-who="'+w+'">사진 올리기</button><button class="mini" data-act="pasteOut" data-day="'+d.id+'" data-who="'+w+'">붙여넣기</button><button class="mini" data-act="addOutfit" data-day="'+d.id+'" data-who="'+w+'">+ 직접 추가</button></div></div>':'')+
     '</section>';
 }
+/* 맞춰보기: 위 줄 상의, 아래 줄 하의를 옆으로 넘기며 조합 보기 */
+const MIXROWS=[{k:'top',lab:'상의',cats:['상의'],up:'상의'},{k:'bot',lab:'하의',cats:['하의','치마'],up:'하의'}];
+const mixItems=(w,r)=>S.outfits.filter(o=>ownorm(o)===w&&r.cats.includes(ocat(o)));
+function mixIdx(rail){const xs=rail.querySelectorAll('.mitem');if(!xs.length)return -1;const c=rail.scrollLeft+rail.clientWidth/2;let bi=0,bd=Infinity;
+  xs.forEach((x,i)=>{const d=Math.abs(x.offsetLeft+x.offsetWidth/2-c);if(d<bd){bd=d;bi=i}});return bi}
+function mixSync(rail){const xs=rail.querySelectorAll('.mitem');const i=mixIdx(rail);if(i<0)return;
+  xs.forEach((x,j)=>x.classList.toggle('on',j===i));UI.mixPos[UI.mixWho+'|'+rail.dataset.row]=xs[i].dataset.id;
+  const row=rail.closest('.mrow');row.querySelector('.mcount').textContent=(i+1)+' / '+xs.length;
+  row.querySelector('.marrow.prev').disabled=i<=0;row.querySelector('.marrow.next').disabled=i>=xs.length-1}
+function mixGo(rail,i,smooth){const x=rail.querySelectorAll('.mitem')[i];if(!x)return;
+  rail.scrollTo({left:x.offsetLeft+x.offsetWidth/2-rail.clientWidth/2,behavior:smooth&&!matchMedia('(prefers-reduced-motion: reduce)').matches?'smooth':'auto'})}
+function mixRestore(smooth){document.querySelectorAll('#p-outfit .mrail').forEach(rail=>{if(!rail.clientWidth)return;
+  const xs=[...rail.querySelectorAll('.mitem')];const id=UI.mixPos[UI.mixWho+'|'+rail.dataset.row];
+  mixGo(rail,Math.max(0,xs.findIndex(x=>x.dataset.id===id)),smooth);mixSync(rail)})}
+function mixHTML(){
+  const w=UI.mixWho, canEdit=canWrite&&db;
+  let html='<div class="mix"><div class="mixbar"><div class="chips" role="group" aria-label="누구 옷장?">'+['수빈','이령'].map(x=>'<button class="chip" aria-pressed="'+(w===x)+'" data-act="mixWho" data-v="'+x+'">'+x+'</button>').join('')+'</div><small>옆으로 넘겨서 맞춰보세요</small></div><div class="mboard">';
+  html+=MIXROWS.map((r,ri)=>{const list=mixItems(w,r);
+    const up=canEdit?'<button class="mini" data-act="mixUp" data-cat="'+r.up+'" data-row="'+r.k+'">+ 사진</button>':'';
+    const head='<div class="mhead"><b>'+r.lab+'</b><span class="mcount num">'+(list.length?'1 / '+list.length:'0')+'</span>'+up+'</div>';
+    const body=list.length?'<div class="mwrap"><button class="marrow prev" data-act="mixStep" data-v="-1" aria-label="이전 '+r.lab+'" disabled>‹</button>'+
+        '<div class="mrail" data-row="'+r.k+'" aria-label="'+r.lab+' 넘기기">'+list.map(o=>'<button class="mitem" data-act="editOutfit" data-id="'+o.id+'" aria-label="'+esc(o.title||r.lab)+' 수정">'+thumbHTML(o)+'</button>').join('')+'</div>'+
+        '<button class="marrow next" data-act="mixStep" data-v="1" aria-label="다음 '+r.lab+'"'+(list.length<2?' disabled':'')+'>›</button></div>'
+      :'<div class="mempty">아직 '+w+' '+r.lab+' 사진이 없어요'+(canEdit?'<span>위의 "+ 사진"으로 여러 장 한 번에 올릴 수 있어요</span>':'')+'</div>';
+    return (ri?'<div class="mdiv"></div>':'')+'<section class="mrow" aria-label="'+r.lab+'">'+head+body+'</section>'}).join('');
+  return html+'</div></div>';
+}
 function renderOutfit(){
   const el=$('#p-outfit');
-  let html='<div class="panel-head"><div><div class="label">Outfits</div><h2>날짜별 코디</h2></div><div class="chips" style="justify-content:flex-end">'+[['card','카드'],['all','한눈에']].map(([v,t])=>'<button class="chip" aria-pressed="'+(UI.outView===v)+'" data-act="outView" data-v="'+v+'">'+t+'</button>').join('')+'</div></div>';
+  let html='<div class="panel-head"><div><div class="label">Outfits</div><h2>'+(UI.outView==='mix'?'옷장 맞춰보기':'날짜별 코디')+'</h2></div><div class="chips" style="justify-content:flex-end">'+[['mix','맞춰보기'],['card','날짜별'],['all','한눈에']].map(([v,t])=>'<button class="chip" aria-pressed="'+(UI.outView===v)+'" data-act="outView" data-v="'+v+'">'+t+'</button>').join('')+'</div></div>';
+  if(UI.outView==='mix'){
+    el.innerHTML=html+mixHTML();$('#c-outfit').textContent=S.outfits.length;
+    el.querySelectorAll('.mrail').forEach(rail=>rail.addEventListener('scroll',()=>{if(rail._raf)return;rail._raf=requestAnimationFrame(()=>{rail._raf=0;mixSync(rail)})},{passive:true}));
+    mixRestore(false);return;
+  }
   if(!S.days.length){html+='<div class="empty"><b>일정을 불러오는 중이에요</b>날짜가 생기면 날짜마다 코디 카드가 만들어져요.</div>';el.innerHTML=html;return}
   if(UI.outView==='all'){
     const byCat=(a,b)=>OUTCATS.indexOf(ocat(a))-OUTCATS.indexOf(ocat(b));
@@ -650,14 +708,14 @@ function renderOutfit(){
   el.innerHTML=html;$('#c-outfit').textContent=S.outfits.length;
 }
 let outBusy=false;
-async function uploadOutfits(files,day,who){
-  if(!files.length||outBusy||!db||!assets)return;outBusy=true;let ok=0,fail=0;const t0=Date.now(),cat=UI.outCat;
+async function uploadOutfits(files,day,who,cat=UI.outCat){
+  if(!files.length||outBusy||!db||!assets)return;outBusy=true;let ok=0,fail=0,first=null;const t0=Date.now();
   toast(files.length+'장 올리는 중이에요');
   for(let i=0;i<files.length;i++){
-    try{const id=await upload(files[i]);await db.collection('outfits').add({img:id,cat,title:'',note:'',day,who,createdAt:t0+i});ok++}
+    try{const id=await upload(files[i]);const ref=await db.collection('outfits').add({img:id,cat,title:'',note:'',day,who,createdAt:t0+i});if(!first)first=ref.id;ok++}
     catch(e){fail++;if(e&&e.code==='quota_or_state')break}
   }
-  outBusy=false;toast(ok+'장 올렸어요'+(fail?' · '+fail+'장은 실패했어요':''));
+  outBusy=false;toast(ok+'장 올렸어요'+(fail?' · '+fail+'장은 실패했어요':''));return first;
 }
 function renderShop(){
   const el=$('#p-shop');
@@ -936,6 +994,9 @@ document.addEventListener('click',async e=>{
   else if(a==='goRefs'){UI.refDay=b.dataset.day;UI.refTag='전체';renderPhoto();setTab('photo');scrollTo({top:0})}
   else if(a==='goOutfit'){setTab('outfit');scrollTo({top:0})}
   else if(a==='outView'){UI.outView=b.dataset.v;renderOutfit()}
+  else if(a==='mixWho'){UI.mixWho=b.dataset.v;store('mixWho',UI.mixWho);renderOutfit()}
+  else if(a==='mixStep'){const rail=b.closest('.mwrap').querySelector('.mrail');mixGo(rail,mixIdx(rail)+Number(b.dataset.v),true)}
+  else if(a==='editOutfit'&&b.classList.contains('mitem')&&!b.classList.contains('on')){const rail=b.parentElement;mixGo(rail,[...rail.querySelectorAll('.mitem')].indexOf(b),true)}
   else if(a==='outDay'){UI.outDay=b.dataset.v;renderOutfit()}
   else if(a==='outStep'){const i=S.days.findIndex(d=>d.id===UI.outDay);const n=S.days[i+Number(b.dataset.v)];if(n){UI.outDay=n.id;renderOutfit()}}
   else if(a==='outCat'){UI.outCat=b.dataset.v;document.querySelectorAll('[data-act="outCat"]').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.v===UI.outCat)))}
@@ -954,6 +1015,8 @@ document.addEventListener('click',async e=>{
   else if(a==='addRef')openSheet({title:'사진 레퍼런스 추가',values:{who:'같이',tags:UI.refTag!=='전체'?[UI.refTag]:[]},fields:withDays(refFields),validate:needRef,onSave:v=>saveDoc('refs',null,v)});
   else if(a==='editRef'){const r=S.refs.find(x=>x.id===id);if(!r)return;if(!canWrite){return}
     openSheet({title:'사진 레퍼런스 수정',values:r,fields:withDays(refFields),validate:needRef,onSave:v=>saveDoc('refs',id,Object.assign(v,{example:false}),r),onDelete:()=>removeDoc('refs',r)})}
+  else if(a==='mixUp'){const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.multiple=true;const w=UI.mixWho,row=b.dataset.row,cat=b.dataset.cat;
+    inp.onchange=async()=>{const id=await uploadOutfits([...inp.files],'',w,cat);if(id&&UI.mixWho===w){UI.mixPos[w+'|'+row]=id;if(UI.outView==='mix')mixRestore(true)}};inp.click()}
   else if(a==='bulkOut'){const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.multiple=true;inp.onchange=()=>uploadOutfits([...inp.files],b.dataset.day,b.dataset.who);inp.click()}
   else if(a==='pasteOut'){try{const items=await navigator.clipboard.read();const blobs=[];for(const it of items){const ty=it.types.find(x=>/^image\//.test(x));if(ty)blobs.push(await it.getType(ty))}
       if(blobs.length)uploadOutfits(blobs,b.dataset.day,b.dataset.who);else toast('복사된 사진이 없어요. 사진을 길게 눌러 "이미지 복사" 해주세요')}catch(err){toast('붙여넣기가 안 돼요. "사진 올리기"를 써주세요')}}
