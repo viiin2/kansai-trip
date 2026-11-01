@@ -248,6 +248,19 @@ main{padding-block:26px 40px}
 .othumb{width:46px;height:58px;padding:0;border:2px solid var(--sheet);background:var(--ai-soft);overflow:hidden}
 @media (max-width:640px){.looks{grid-template-columns:1fr}.ovrow{grid-template-columns:64px 1fr 1fr;padding:8px}.lpiece .limg{width:84px}.lpiece.big .limg{width:124px}.ocard{width:112px}.ovrow .od b{font-size:15px}}
 
+/* ---- wardrobe grid (한눈에) ---- */
+.wdays{display:grid;gap:14px}
+.wday{background:var(--sheet);border:1px solid var(--frame);padding:14px;display:grid;gap:10px;min-width:0}
+.wdh{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.wdh b{font-family:var(--f-thin);font-weight:400;font-size:20px}
+.wdh span:not(.num){font-size:13px;color:var(--ink-2)}
+.wwho{margin-top:4px}
+.wgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:6px}
+.wtile{aspect-ratio:1/1;background:#efecea;border:0;padding:8px;overflow:hidden;min-width:0}
+.wtile img{width:100%;height:100%;object-fit:contain;display:block}
+.wtile .nophoto{font-size:12px}
+.wempty{font-size:13px;grid-column:1/-1}
+
 
 /* ---- shop: product cards ---- */
 .tally{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:24px}
@@ -603,9 +616,11 @@ function renderOutfit(){
   let html='<div class="panel-head"><div><div class="label">Outfits</div><h2>날짜별 코디</h2></div><div class="chips" style="justify-content:flex-end">'+[['card','카드'],['all','한눈에']].map(([v,t])=>'<button class="chip" aria-pressed="'+(UI.outView===v)+'" data-act="outView" data-v="'+v+'">'+t+'</button>').join('')+'</div></div>';
   if(!S.days.length){html+='<div class="empty"><b>일정을 불러오는 중이에요</b>날짜가 생기면 날짜마다 코디 카드가 만들어져요.</div>';el.innerHTML=html;return}
   if(UI.outView==='all'){
-    html+='<div class="ovall"><div class="ovrow ovhead"><span></span><span class="who who-수빈">수빈</span><span class="who who-이령">이령</span></div>'+
-      S.days.map(d=>'<div class="ovrow"><div class="od"><b class="num">'+esc(d.date)+' '+esc(d.dow)+'</b><small class="muted">'+esc(d.title||'')+'</small></div>'+
-        ['수빈','이령'].map(w=>{const items=outOf(d.id,w);return '<div class="ovcell">'+(items.length?items.map(o=>'<button class="othumb" data-act="editOutfit" data-id="'+o.id+'" aria-label="'+esc(o.title||ocat(o))+' 수정">'+thumbHTML(o)+'</button>').join(''):'<span class="muted" style="font-size:12px">—</span>')+'</div>'}).join('')+'</div>').join('')+'</div>';
+    const byCat=(a,b)=>OUTCATS.indexOf(ocat(a))-OUTCATS.indexOf(ocat(b));
+    html+='<div class="wdays">'+S.days.map(d=>'<section class="wday"><div class="wdh"><b class="num">'+esc(d.date)+' '+esc(d.dow)+'</b><span>'+esc(d.title||'')+'</span></div>'+
+      ['수빈','이령'].map(w=>{const items=outOf(d.id,w).slice().sort(byCat);
+        return '<div class="wwho"><span class="who who-'+w+'">'+w+'</span></div><div class="wgrid">'+(items.length?items.map(o=>'<button class="wtile" data-act="editOutfit" data-id="'+o.id+'" aria-label="'+esc(o.title||ocat(o))+' 수정">'+thumbHTML(o)+'</button>').join(''):'<span class="muted wempty">아직 없어요</span>')+'</div>'}).join('')+
+      '</section>').join('')+'</div>';
     el.innerHTML=html;$('#c-outfit').textContent=S.outfits.length;return;
   }
   const days=S.days;const cur=days.find(d=>d.id===UI.outDay)||days[0];UI.outDay=cur.id;const ci=days.indexOf(cur);
