@@ -243,6 +243,12 @@ main{padding-block:26px 40px}
 .bsave{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}
 .bsave:empty{display:none}
 .bsaved{font-size:14px;color:var(--shu)}
+.bmulti{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:8px}
+.bmt{position:relative;aspect-ratio:1/1;background:#fff;border:2px solid var(--line);border-radius:10px;padding:6px;display:grid;grid-template:minmax(0,1fr)/minmax(0,1fr);place-items:center;min-width:0;opacity:.6}
+.bmt.on{opacity:1;border-color:var(--shu);box-shadow:0 0 0 2px var(--shu-soft)}
+.bmt.on::after{content:"✓";position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:var(--shu);color:#fff;font-size:12px;line-height:20px;text-align:center}
+.bmt img{width:100%;height:100%;object-fit:contain;display:block}
+.cgroup{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;width:100%}.cgroup .cp{width:46%}
 @media (min-width:760px){.builder{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"rows prev" "rows save";grid-template-rows:auto 1fr;align-items:start;column-gap:24px}.brows{grid-area:rows}.bpv{grid-area:prev}.bsave{grid-area:save;align-self:start}}
 @media (max-width:759px){.bsave{position:sticky;bottom:12px;z-index:4;background:rgba(252,251,251,.97);border:1px solid var(--frame);border-radius:99px;padding:6px 10px;box-shadow:var(--shadow)}}
 @media (max-width:640px){.bsave,.cbar{bottom:calc(76px + env(safe-area-inset-bottom,0px))}}
@@ -609,10 +615,11 @@ const allTags=()=>OUTTAGS.slice(0,-1).concat(customTags(),['기타']);
 const rank=t=>{const i=ROWORDER.indexOf(t);return i>=0?i:t==='기타'?99:50};
 const outOf=(dayId,w)=>S.outfits.filter(o=>o.day===dayId&&ownorm(o)===w);
 const lookOf=(dayId,w)=>S.looks.find(l=>l.day===dayId&&ownorm(l)===w);
-const lookMap=l=>{const m=l.items||{'상의':l.top,'하의':l.bottom},r={};Object.keys(m).forEach(k=>{if(m[k])r[k]=m[k]});return r};
+const MULTI=new Set(['악세사리']);   /* 여러 개 같이 고를 수 있는 태그 */
+const lookMap=l=>{const m=l.items||{'상의':l.top,'하의':l.bottom},r={};Object.keys(m).forEach(k=>{const v=m[k];if(Array.isArray(v)?v.length:v)r[k]=v});return r};
 /* 그 날 코디: 저장한 조합, 없으면 예전에 그 날짜로 올린 사진 */
 const dayItems=(dayId,w)=>{const l=lookOf(dayId,w);
-  const xs=l?Object.values(lookMap(l)).map(id=>S.outfits.find(o=>o.id===id)).filter(Boolean):outOf(dayId,w);
+  const xs=l?Object.values(lookMap(l)).flat().map(id=>S.outfits.find(o=>o.id===id)).filter(Boolean):outOf(dayId,w);
   return xs.slice().sort((a,b)=>rank(tagOf(a)||'기타')-rank(tagOf(b)||'기타'))};
 const pieceHTML=o=>o.img?'<img alt="'+esc(o.title||tagOf(o)||'옷')+'" src="'+img(o.img)+'">':'<span class="nophoto">'+esc(o.title||tagOf(o)||'옷')+'</span>';
 const ARROW=d=>'<svg viewBox="0 0 10 10" aria-hidden="true"><path d="'+(d<0?'M7 1L2 5l5 4z':'M3 1l5 4-5 4z')+'" fill="currentColor"/></svg>';
@@ -624,8 +631,10 @@ function collageHTML(items){
   items.forEach(o=>{const t=tagOf(o)||'기타';(BIGROWS.includes(t)?L:(t==='신발'||t==='양말')?B:R).push(o)});
   const size=o=>{const t=tagOf(o);return t==='원피스'?'xl':BIGROWS.includes(t)?'lg':(t==='가방'||t==='신발')?'md':'sm'};
   const pc=o=>'<span class="cp cp-'+size(o)+'">'+pieceHTML(o)+'</span>';
+  const acc=R.filter(o=>MULTI.has(tagOf(o))),rest=R.filter(o=>!MULTI.has(tagOf(o)));
+  const right=rest.map(pc).join('')+(acc.length>1?'<div class="cgroup">'+acc.map(pc).join('')+'</div>':acc.map(pc).join(''));
   return '<div class="collage'+(L.length&&R.length?'':' solo')+'">'+
-    (L.length?'<div class="cleft">'+L.map(pc).join('')+'</div>':'')+(R.length?'<div class="cright">'+R.map(pc).join('')+'</div>':'')+
+    (L.length?'<div class="cleft">'+L.map(pc).join('')+'</div>':'')+(R.length?'<div class="cright">'+right+'</div>':'')+
     (B.length?'<div class="cbot">'+B.map(pc).join('')+'</div>':'')+'</div>';
 }
 
@@ -661,15 +670,22 @@ function editOutfitSheet(o){const t=tagOf(o),opts=allTags();if(t&&!opts.includes
 const bDay=()=>{const d=S.days.find(x=>x.id===UI.mixDay)||S.days[0];UI.mixDay=d?d.id:null;return UI.mixDay};
 function bRows(w){const items=closetOf(w).filter(tagOf),has=new Set(items.map(tagOf));
   return ROWORDER.concat(customTags(),['기타']).filter(t=>t==='상의'||t==='하의'||has.has(t)).map(t=>({t,items:items.filter(o=>tagOf(o)===t)}))}
-function bPick(w,r){const s=UI.sel[w]||{};
-  if(Object.prototype.hasOwnProperty.call(s,r.t)){if(s[r.t]===null)return null;const f=r.items.find(o=>o.id===s[r.t]);if(f)return f}
-  return (r.t==='상의'||r.t==='하의')?(r.items[0]||null):null}
-const bCurItems=w=>bRows(w).map(r=>bPick(w,r)).filter(Boolean);
-function bCurMap(w){const m={};bRows(w).forEach(r=>{const p=bPick(w,r);if(p)m[r.t]=p.id});return m}
-const sameMap=(a,b)=>{const ka=Object.keys(a),kb=Object.keys(b);return ka.length===kb.length&&ka.every(k=>a[k]===b[k])};
+/* 고른 아이템: 보통 줄은 0~1개, 악세사리 줄은 여러 개 */
+function bSel(w,r){const s=UI.sel[w]||{},has=Object.prototype.hasOwnProperty.call(s,r.t),v=has?s[r.t]:undefined;
+  if(MULTI.has(r.t)){const ids=v==null?[]:[].concat(v);return r.items.filter(o=>ids.includes(o.id))}
+  if(has){if(v===null)return [];const f=r.items.find(o=>o.id===v);if(f)return [f]}
+  return (r.t==='상의'||r.t==='하의')&&r.items[0]?[r.items[0]]:[]}
+const bPick=(w,r)=>bSel(w,r)[0]||null;
+const bCurItems=w=>bRows(w).flatMap(r=>bSel(w,r));
+function bCurMap(w){const m={};bRows(w).forEach(r=>{const xs=bSel(w,r);if(xs.length)m[r.t]=MULTI.has(r.t)?xs.map(o=>o.id):xs[0].id});return m}
+const normV=v=>[].concat(v).slice().sort().join(',');
+const sameMap=(a,b)=>{const ka=Object.keys(a),kb=Object.keys(b);return ka.length===kb.length&&ka.every(k=>normV(a[k])===normV(b[k]))};
 function loadLook(w,day){const l=day&&lookOf(day,w);if(!l)return false;const s={};bRows(w).forEach(r=>s[r.t]=null);UI.sel[w]=Object.assign(s,lookMap(l));return true}
 function bRowHTML(w,r){const n=r.items.length,p=bPick(w,r),T=esc(r.t);
   if(!n)return '<section class="brow" data-row="'+T+'"><div class="bhead"><b>'+T+'</b></div><div class="bempty">'+T+' 태그를 붙인 사진이 아직 없어요<button class="mini" data-act="outView" data-v="closet">옷장에서 태그 붙이기</button></div></section>';
+  if(MULTI.has(r.t)){const on=new Set(bSel(w,r).map(o=>o.id));
+    return '<section class="brow multi" data-row="'+T+'"><div class="bhead"><b>'+T+'</b><span class="num">'+(on.size?on.size+'개 골랐어요':'없음')+' · 눌러서 여러 개 고르기</span></div>'+
+      '<div class="bmulti">'+r.items.map(o=>'<button class="bmt'+(on.has(o.id)?' on':'')+'" data-act="bToggle" data-row="'+T+'" data-id="'+o.id+'" aria-pressed="'+on.has(o.id)+'" aria-label="'+esc(o.title||r.t)+'">'+pieceHTML(o)+'</button>').join('')+'</div></section>'}
   const arr=d=>'<button class="barrow" data-act="bStep" data-row="'+T+'" data-v="'+d+'" aria-label="'+(d<0?'이전 ':'다음 ')+T+'">'+ARROW(d)+'</button>';
   return '<section class="brow'+(BIGROWS.includes(r.t)?' big':'')+'" data-row="'+T+'"><div class="bhead"><b>'+T+'</b><span class="num">'+(p?(r.items.indexOf(p)+1)+' / '+n:'없음 · '+n+'개')+'</span></div>'+
     '<div class="bbody">'+arr(-1)+'<div class="bimg" data-row="'+T+'">'+(p?pieceHTML(p):'<span class="bnone">'+T+' 없이</span>')+'</div>'+arr(1)+'</div></section>';
@@ -689,11 +705,15 @@ function builderHTML(){
     '<div class="bpv"><div class="bpv-h">'+(day?esc(dayLabel(day))+' · ':'')+w+' 코디 미리보기</div><div class="bpreview">'+bPrevHTML(w)+'</div></div>'+
     '<div class="bsave" aria-live="polite">'+bSaveHTML()+'</div></div>';
 }
-function bStep(t,dir){const w=UI.mixWho,r=bRows(w).find(x=>x.t===t);if(!r||!r.items.length)return;
-  const list=[null].concat(r.items),i=(list.indexOf(bPick(w,r))+dir+list.length)%list.length;
-  (UI.sel[w]||(UI.sel[w]={}))[t]=list[i]?list[i].id:null;
-  const el=[...document.querySelectorAll('#p-outfit .brow')].find(x=>x.dataset.row===t);if(el)el.outerHTML=bRowHTML(w,r);
+function bRefresh(t){const w=UI.mixWho,r=bRows(w).find(x=>x.t===t);
+  const el=[...document.querySelectorAll('#p-outfit .brow')].find(x=>x.dataset.row===t);if(el&&r)el.outerHTML=bRowHTML(w,r);
   const pv=$('#p-outfit .bpreview');if(pv)pv.innerHTML=bPrevHTML(w);const sv=$('#p-outfit .bsave');if(sv)sv.innerHTML=bSaveHTML()}
+function bStep(t,dir){const w=UI.mixWho,r=bRows(w).find(x=>x.t===t);if(!r||!r.items.length||MULTI.has(t))return;
+  const list=[null].concat(r.items),i=(list.indexOf(bPick(w,r))+dir+list.length)%list.length;
+  (UI.sel[w]||(UI.sel[w]={}))[t]=list[i]?list[i].id:null;bRefresh(t)}
+function bToggle(t,id){const w=UI.mixWho,r=bRows(w).find(x=>x.t===t);if(!r)return;
+  const ids=bSel(w,r).map(o=>o.id),i=ids.indexOf(id);if(i<0)ids.push(id);else ids.splice(i,1);
+  (UI.sel[w]||(UI.sel[w]={}))[t]=ids;bRefresh(t)}
 /* 사진을 옆으로 밀어도 넘어가요 */
 let bSwipe=null;
 document.addEventListener('pointerdown',e=>{const im=e.target.closest&&e.target.closest('#p-outfit .bimg');bSwipe=im?{x:e.clientX,y:e.clientY,t:im.dataset.row}:null},{passive:true});
@@ -1008,6 +1028,7 @@ document.addEventListener('click',async e=>{
   else if(a==='mixWho'){UI.mixWho=b.dataset.v;store('mixWho',UI.mixWho);UI.clos.picked=[];if(!UI.sel[UI.mixWho])loadLook(UI.mixWho,bDay());renderOutfit()}
   else if(a==='bDay'){UI.mixDay=b.dataset.v;loadLook(UI.mixWho,UI.mixDay);renderOutfit()}
   else if(a==='bStep')bStep(b.dataset.row,Number(b.dataset.v));
+  else if(a==='bToggle')bToggle(b.dataset.row,id);
   else if(a==='bShow'){if(loadLook(UI.mixWho,bDay()))renderOutfit()}
   else if(a==='goMix'){UI.outView='mix';UI.mixDay=b.dataset.day;loadLook(UI.mixWho,UI.mixDay);renderOutfit();const p=$('#p-outfit');if(p.getBoundingClientRect().top<0)p.scrollIntoView({block:'start'})}
   else if(a==='closTag'){UI.clos.tag=b.dataset.v;renderOutfit()}
