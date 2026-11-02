@@ -768,7 +768,7 @@ function renderTips(){
   if(canWrite&&db){
     html+='<div class="paste"><div class="field"><label for="tipText">꿀팁 원문 붙여넣기</label><textarea id="tipText" placeholder="예) 라피트는 난바에서 출발 40분 전에 가도 자리 있음, 클룩에서 사면 더 싸요..."></textarea></div>'+
     '<div class="field"><label for="tipLink">원문 링크 (선택)</label><input id="tipLink" type="url" placeholder="https://"></div>'+
-    '<div style="display:flex;flex-wrap:wrap;gap:8px">'+(sample?'<button class="btn shu" data-act="tipAI" id="tipAIbtn">Claude로 정리해서 저장</button>':'')+'<button class="btn ghost" data-act="tipRaw">그대로 저장</button><span id="tipStatus" class="muted" style="font-size:13px;align-self:center"></span></div></div>';
+    '<div style="display:flex;flex-wrap:wrap;gap:8px">'+(sample?'<button class="btn shu" data-act="tipAI" id="tipAIbtn">AI로 정리해서 저장</button>':'')+'<button class="btn ghost" data-act="tipRaw">그대로 저장</button><span id="tipStatus" class="muted" style="font-size:13px;align-self:center"></span></div></div>';
   }
   const tips=S.tips.slice().sort((a,b)=>(b.pinned?1:0)-(a.pinned?1:0)||(b.createdAt||0)-(a.createdAt||0));
   if(!tips.length)html+='<div class="empty"><b>모아둔 꿀팁이 없어요</b>위 칸에 인터넷에서 본 내용을 붙여넣어 보세요.</div>';
@@ -1085,7 +1085,7 @@ document.addEventListener('click',async e=>{
       await db.collection('tips').add({title:String(out.title||'꿀팁').slice(0,60),cat:TIPCAT.includes(out.cat)?out.cat:'기타',bullets,link,who:'같이',createdAt:Date.now()});
       $('#tipText').value='';$('#tipLink').value='';st.textContent='';toast('정리해서 저장했어요');
     }catch(err){const c=err&&err.code;
-      st.textContent=c==='not_granted'||c==='sampling_disabled'?'Claude 정리를 쓸 수 없어서 "그대로 저장"을 눌러주세요.':c==='rate_limited'?'잠시 뒤에 다시 눌러주세요.':(c==='invalid_argument'||c==='quota_exceeded')?writeMsg(err):'정리하지 못했어요. 다시 누르거나 "그대로 저장"을 써주세요.';
+      st.textContent=c==='not_granted'||c==='sampling_disabled'?'AI 정리를 쓸 수 없어서 "그대로 저장"을 눌러주세요.':c==='rate_limited'?'잠시 뒤에 다시 눌러주세요.':(c==='invalid_argument'||c==='quota_exceeded')?writeMsg(err):'정리하지 못했어요. 다시 누르거나 "그대로 저장"을 써주세요.';
       if(c==='not_granted'||c==='sampling_disabled'){sample=null;btn.hidden=true}}
     finally{btn.disabled=false}
   }
