@@ -250,21 +250,15 @@ main{padding-block:26px 40px}
 .bmt.on{opacity:1;border-color:var(--shu);box-shadow:0 0 0 2px var(--shu-soft)}
 .bmt.on::after{content:"✓";position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:var(--shu);color:#fff;font-size:12px;line-height:20px;text-align:center}
 .bmt img{width:100%;height:100%;object-fit:contain;display:block}
-.cgroup{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:2cqw;max-width:44cqw}.cgroup .cp-sm img{max-width:20cqw;max-height:15cqw}
 @media (min-width:760px){.builder{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"rows prev" "rows save";grid-template-rows:auto 1fr;align-items:start;column-gap:24px}.brows{grid-area:rows}.bpv{grid-area:prev}.bsave{grid-area:save;align-self:start}}
 @media (max-width:759px){.bsave{position:sticky;bottom:12px;z-index:4;background:rgba(252,251,251,.97);border:1px solid var(--frame);border-radius:99px;padding:6px 10px;box-shadow:var(--shadow)}}
 @media (max-width:640px){.bsave,.cbar{bottom:calc(76px + env(safe-area-inset-bottom,0px))}}
 /* 플랫레이 콜라주 */
-.collage{container-type:inline-size;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fff;border-radius:12px;padding:14px 10px;min-height:180px}
-.ctop{display:flex;justify-content:center;align-items:center;gap:3cqw;max-width:100%}
-.cleft,.cright{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0}
-.cright{gap:2cqw}
-.cleft .cp+.cp{margin-top:-4cqw}
-.cbot{display:flex;justify-content:center;align-items:flex-end;gap:4cqw;margin-top:-2cqw}
-.cp{display:block}
-.cp img{display:block;width:auto;height:auto;mix-blend-mode:multiply}
-.cp-xl img{max-height:78cqw;max-width:50cqw}.cp-lg img{max-height:40cqw;max-width:50cqw}.cp-md img{max-height:28cqw;max-width:36cqw}.cp-sm img{max-height:18cqw;max-width:24cqw}
-.cp .nophoto{width:24cqw;height:18cqw;font-size:12px;border:1px dashed var(--line);border-radius:8px}
+.collage{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(8px,3.5vw,18px);align-content:start;background:#f5f4f2;border-radius:12px;padding:clamp(10px,4vw,20px)}
+.pol{display:block;background:#fff;padding:6% 6% 18%;box-shadow:0 1px 2px rgba(74,68,72,.14),0 3px 10px rgba(74,68,72,.08);min-width:0}
+.pph{display:grid;grid-template:minmax(0,1fr)/minmax(0,1fr);place-items:center;aspect-ratio:5/6;background:#e7e5e2;overflow:hidden}
+.pph img{width:100%;height:100%;object-fit:contain;display:block}
+.pph .nophoto{font-size:12px}
 /* 한눈에 */
 .lookgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:14px}
 .lday{background:var(--sheet);border:1px solid var(--frame);border-radius:16px;padding:12px;display:grid;gap:10px;align-content:start;min-width:0}
@@ -626,18 +620,10 @@ const dayItems=(dayId,w)=>{const l=lookOf(dayId,w);
 const pieceHTML=o=>o.img?'<img alt="'+esc(o.title||tagOf(o)||'옷')+'" src="'+img(o.img)+'">':'<span class="nophoto">'+esc(o.title||tagOf(o)||'옷')+'</span>';
 const ARROW=d=>'<svg viewBox="0 0 10 10" aria-hidden="true"><path d="'+(d<0?'M7 1L2 5l5 4z':'M3 1l5 4-5 4z')+'" fill="currentColor"/></svg>';
 
-/* 플랫레이: 왼쪽 옷, 오른쪽 모자·가방·악세사리, 아래 양말·신발 */
+/* 한 날 코디: 3열 폴라로이드 격자 (아우터→상의→…→악세사리 순서) */
 function collageHTML(items){
   if(!items.length)return '';
-  const L=[],R=[],B=[];
-  items.forEach(o=>{const t=tagOf(o)||'기타';(BIGROWS.includes(t)?L:(t==='신발'||t==='양말')?B:R).push(o)});
-  const size=o=>{const t=tagOf(o);return t==='원피스'?'xl':BIGROWS.includes(t)?'lg':(t==='가방'||t==='신발')?'md':'sm'};
-  const pc=o=>'<span class="cp cp-'+size(o)+'">'+pieceHTML(o)+'</span>';
-  const acc=R.filter(o=>MULTI.has(tagOf(o))),rest=R.filter(o=>!MULTI.has(tagOf(o)));
-  const right=rest.map(pc).join('')+(acc.length>1?'<div class="cgroup">'+acc.map(pc).join('')+'</div>':acc.map(pc).join(''));
-  return '<div class="collage"><div class="ctop">'+
-    (L.length?'<div class="cleft">'+L.map(pc).join('')+'</div>':'')+(R.length?'<div class="cright">'+right+'</div>':'')+'</div>'+
-    (B.length?'<div class="cbot">'+B.map(pc).join('')+'</div>':'')+'</div>';
+  return '<div class="collage">'+items.map(o=>'<span class="pol"><span class="pph">'+pieceHTML(o)+'</span></span>').join('')+'</div>';
 }
 
 /* 옷장 */
