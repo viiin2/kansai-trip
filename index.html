@@ -657,7 +657,7 @@ function editOutfitSheet(o){const t=tagOf(o),opts=allTags();if(t&&!opts.includes
 /* 코디 만들기: 태그마다 한 줄, ◀ ▶ 로 바꾸고 날짜에 저장 */
 const bDay=()=>{const d=S.days.find(x=>x.id===UI.mixDay)||S.days[0];UI.mixDay=d?d.id:null;return UI.mixDay};
 function bRows(w){const items=closetOf(w).filter(tagOf),has=new Set(items.map(tagOf));
-  return ROWORDER.concat(customTags(),['기타']).filter(t=>ROWORDER.includes(t)||has.has(t)).map(t=>({t,items:items.filter(o=>tagOf(o)===t)}))}
+  return ROWORDER.concat(customTags(),['기타']).filter(t=>has.has(t)).map(t=>({t,items:items.filter(o=>tagOf(o)===t)}))}
 /* 고른 아이템: 보통 줄은 0~1개, 악세사리 줄은 여러 개 */
 function bSel(w,r){const s=UI.sel[w]||{},has=Object.prototype.hasOwnProperty.call(s,r.t),v=has?s[r.t]:undefined;
   if(MULTI.has(r.t)){const ids=v==null?[]:[].concat(v);return r.items.filter(o=>ids.includes(o.id))}
@@ -689,8 +689,8 @@ const bPrevHTML=w=>collageHTML(bCurItems(w))||'<div class="cempty">고른 옷이
 function builderHTML(){
   const w=UI.mixWho,day=bDay();let h='';
   if(S.days.length)h+='<div class="daychips bdays" role="group" aria-label="어느 날 코디?">'+S.days.map(d=>'<button class="chip'+(lookOf(d.id,w)?' has':'')+'" aria-pressed="'+(d.id===day)+'" data-act="bDay" data-v="'+d.id+'">'+esc(d.date)+' '+esc(d.dow)+'</button>').join('')+'</div>';
-  if(!closetOf(w).some(tagOf))h+='<p class="bhint">줄마다 <b>+ 사진</b>으로 바로 올리거나, <button class="linkish" data-act="outView" data-v="closet">옷장</button>에서 여러 장을 한 번에 올리고 태그를 붙여주세요.</p>';
-  return h+'<div class="builder"><div class="brows">'+bRows(w).map(r=>bRowHTML(w,r)).join('')+'</div>'+
+  if(!closetOf(w).some(tagOf))return h+'<div class="empty"><b>'+w+' 옷장에 태그 붙인 사진이 아직 없어요</b>옷장에서 사진을 올리고 상의·하의·모자 같은 태그를 붙이면, 붙인 태그마다 여기에 줄이 생겨요.<div style="margin-top:12px"><button class="btn shu" data-act="outView" data-v="closet">옷장으로 가기</button></div></div>';
+  return h+'<div class="builder"><div class="brows">'+bRows(w).map(r=>bRowHTML(w,r)).join('')+'<p class="bhint">다른 종류는 <button class="linkish" data-act="outView" data-v="closet">옷장</button>에서 태그를 붙이면 줄이 생겨요</p></div>'+
     '<div class="bpv"><div class="bpv-h">'+(day?esc(dayLabel(day))+' · ':'')+w+' 코디 미리보기</div><div class="bpreview">'+bPrevHTML(w)+'</div></div>'+
     '<div class="bsave" aria-live="polite">'+bSaveHTML()+'</div></div>';
 }
