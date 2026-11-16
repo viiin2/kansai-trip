@@ -518,7 +518,7 @@ textarea{min-height:84px;resize:vertical}
 <div id="lbRoot"></div>
 <div id="toastRoot"></div>
 
-<script src="kyoto.js?v=5"></script>
+<script src="kyoto.js?v=6"></script>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {getAuth,signInAnonymously} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -585,7 +585,7 @@ function renderPlan(){
     return '<article class="day"><div class="when"><span class="date">'+esc(d.date)+'</span><span class="dow">'+esc(d.dow)+'요일</span><span class="city '+c[1]+'">'+c[0]+'</span></div>'+
     '<div class="body"><h3>'+esc(d.title)+'</h3><ul class="stops">'+(d.stops||[]).map(s=>'<li><span class="t">'+esc(s.t||'')+'</span><span><span class="n">'+esc(s.name)+'</span>'+(s.note?' <span class="note">· '+esc(s.note)+'</span>':'')+'</span></li>').join('')+'</ul>'+
     (d.memo?'<div class="memo">'+esc(d.memo)+'</div>':'')+
-    '<div class="foot"><button class="linkish" data-act="goOutfit" data-day="'+d.id+'">코디 '+no+'개</button>'+(canWrite&&db?'<button class="mini" data-act="editDay" data-id="'+d.id+'" style="margin-left:auto">수정</button>':'')+'</div></div></article>'}).join('')+'</div>';
+    '<div class="foot"><button class="linkish" data-act="goOutfit" data-day="'+d.id+'">코디 '+no+'개</button>'+(canWrite&&db?'<button class="mini" data-act="addDayStop" data-id="'+d.id+'" style="margin-left:auto">+ 장소 추가</button><button class="mini" data-act="editDay" data-id="'+d.id+'">수정</button>':'')+'</div></div></article>'}).join('')+'</div>';
   el.innerHTML=html;
 }
 
@@ -1031,6 +1031,14 @@ document.addEventListener('click',async e=>{
   else if(a==='shopView'){UI.shopView=b.dataset.v;renderShop()}
   else if(a==='shopWho'){UI.shopWho=b.dataset.v;renderShop()}
   else if(!db)return;
+  else if(a==='addDayStop'){const d=S.days.find(x=>x.id===id);if(!d)return;
+    openSheet({title:d.date+' ('+d.dow+') 장소 추가',values:{t:'',name:'',note:''},
+      fields:[{key:'name',label:'장소',ph:'예) 니시키 시장'},{key:'t',label:'시간 (선택)',ph:'예) 14:00',hint:'시간을 적으면 시간 순서에 맞는 자리에 들어가요. 비우면 맨 아래에 붙어요.'},{key:'note',label:'메모 (선택)',ph:'예) 예약 번호, 먹을 것'}],
+      validate:v=>(v.name||'').trim()?null:'장소 이름을 적어주세요',
+      onSave:v=>{const cur=S.days.find(x=>x.id===id)||d,stops=(cur.stops||[]).slice(),st={t:(v.t||'').trim(),name:v.name.trim(),note:(v.note||'').trim()};
+        const mins=x=>{const m=/^(\d{1,2}):(\d{2})/.exec(x||'');return m?(+m[1])*60+(+m[2]):null},tm=mins(st.t);let at=stops.length;
+        if(tm!=null){at=0;stops.forEach((x,i)=>{const xm=mins(x.t);if(xm!=null&&xm<=tm)at=i+1})}
+        stops.splice(at,0,st);const body=Object.assign({},cur,{stops});delete body.id;if(sheetState)sheetState.saved=true;return db.collection('days').doc(id).set(body)}})}
   else if(a==='editDay'){const d=S.days.find(x=>x.id===id);if(!d)return;
     openSheet({title:d.date+' ('+d.dow+') 일정 수정',values:{title:d.title,stopsText:(d.stops||[]).map(s=>[s.t||'',s.name||'',s.note||''].join(' | ')).join('\n'),memo:d.memo||''},
       fields:[{key:'title',label:'하루 제목'},{key:'stopsText',label:'장소 (한 줄에 하나: 시간 | 장소 | 메모)',type:'textarea',hint:'예) 7:00 | 후시미 이나리 | 사람 없을 때 토리이 사진'},{key:'memo',label:'메모',type:'textarea',ph:'예약번호, 준비물, 바뀐 계획 등'}],
