@@ -157,14 +157,25 @@ const AREAS={
  station:{n:'교토역',lat:34.9858,lng:135.7588},
  arashiyama:{n:'아라시야마',lat:35.0152,lng:135.6778},
  fushimi:{n:'후시미이나리',lat:34.9680,lng:135.7712},
- downtown:{n:'시조·가와라마치',lat:35.0040,lng:135.7690}
+ downtown:{n:'시조·가와라마치',lat:35.0040,lng:135.7690},
+ osaka:{n:'오사카 숙소 (기타카가야)',lat:34.6237,lng:135.4778}
 };
 const RENT_AREAS=['kiyomizu','gion','station','arashiyama','fushimi'];
-const HOME_AREAS=['station','downtown','gion','kiyomizu','arashiyama'];
+const HOME_AREAS=['osaka','station','downtown','gion','kiyomizu','arashiyama'];
 
 /* 이동 시간 어림: 구역 중심과 구역 사이 대중교통(문에서 문까지, 대기 포함) */
-const CL={ST:[34.9858,135.7588,1.2],GI:[34.9995,135.7790,1.0],OK:[35.0135,135.7890,1.0],DT:[35.0055,135.7650,1.0],GO:[35.0254,135.7621,1.0],FU:[34.9705,135.7725,1.0],AR:[35.0150,135.6740,1.5],YA:[35.0636,135.7968,1.2],OH:[35.1200,135.8340,1.5],KI:[35.1217,135.7628,2.5]};
+const CL={ST:[34.9858,135.7588,1.2],GI:[34.9995,135.7790,1.0],OK:[35.0135,135.7890,1.0],DT:[35.0055,135.7650,1.0],GO:[35.0254,135.7621,1.0],FU:[34.9705,135.7725,1.0],AR:[35.0150,135.6740,1.5],YA:[35.0636,135.7968,1.2],OH:[35.1200,135.8340,1.5],KI:[35.1217,135.7628,2.5],OS:[34.6237,135.4778,2.0]};
 const TR={
+'OS|ST':[70,'요쓰바시선 기타카가야→니시우메다 17분, JR 오사카→교토 신쾌속 29분'],
+'OS|DT':[80,'요쓰바시선→니시우메다, 한큐 오사카우메다→교토가와라마치 특급 약 43분'],
+'OS|GI':[85,'요쓰바시선 히고바시에서 내려 게이한 요도야바시→기온시조 특급 약 50분'],
+'OS|FU':[85,'게이한 요도야바시→단바바시 환승→후시미이나리 (또는 JR 교토 경유 나라선)'],
+'OS|OK':[100,'게이한 요도야바시→산조 + 지하철 도자이선 히가시야마'],
+'OS|GO':[95,'JR 오사카→교토 + 지하철 가라스마선 이마데가와'],
+'OS|AR':[100,'한큐 오사카우메다→가쓰라 환승→아라시야마'],
+'OS|YA':[115,'게이한 요도야바시→데마치야나기 특급 약 55분 + 에이잔 전철 14분'],
+'OS|OH':[140,'게이한→데마치야나기 + 교토버스 16·17번 (또는 JR 교토 + 교토버스 17번)'],
+'OS|KI':[135,'게이한 요도야바시→데마치야나기 + 에이잔 전철 30분 + 버스 33번'],
 'ST|GI':[25,'시버스 206·86번(기요미즈미치·기온) 15~20분 + 도보'],
 'ST|OK':[35,'지하철 가라스마선→도자이선 히가시야마역 + 도보, 또는 시버스 5·86번'],
 'ST|DT':[15,'지하철 가라스마선 교토→시조 4분 + 도보'],
@@ -236,12 +247,12 @@ function hav(a,b){const R=6371,r=Math.PI/180,dl=(b.lat-a.lat)*r,dg=(b.lng-a.lng)
 function cluster(p){let best=null,bd=1e9;for(const k in CL){const d=hav(p,{lat:CL[k][0],lng:CL[k][1]});if(d<=CL[k][2]&&d<bd){bd=d;best=k}}return best}
 
 function buildStops(opt){return opt.stops.map(([p,stay])=>p==='lunch'?{k:uid(),p:'free',name:'점심',stay,mode:'auto',min:null}:p.startsWith('free:')?{k:uid(),p:'free',name:p.slice(5),stay,mode:'auto',min:null}:{k:uid(),p,stay,mode:'auto',min:null})}
-function defaults(){return {v:1,
+function defaults(){return {v:2,
  days:{kimono:{start:'09:00',end:'17:00',base:{area:'kiyomizu',loc:null,stay:60},opt:'k1',stops:buildStops(OPTS.kimono[0])},
-       casual:{start:'09:00',end:'',base:{area:'station',loc:null,stay:0},opt:'c2',stops:buildStops(OPTS.casual[1])}},
+       casual:{start:'08:00',end:'',base:{area:'osaka',loc:null,stay:0},opt:'c2',stops:buildStops(OPTS.casual[1])}},
  custom:{},memo:{},loc:{}}}
 function normalize(d){const s=defaults();if(!d||typeof d!=='object')return s;
- ['kimono','casual'].forEach(k=>{const x=d.days&&d.days[k];if(x){s.days[k]=Object.assign(s.days[k],x);s.days[k].base=Object.assign({area:k==='kimono'?'kiyomizu':'station',loc:null,stay:k==='kimono'?60:0},x.base||{});s.days[k].stops=Array.isArray(x.stops)?x.stops.filter(t=>t&&t.p):[]}});
+ ['kimono','casual'].forEach(k=>{const x=d.days&&d.days[k];if(x){s.days[k]=Object.assign(s.days[k],x);s.days[k].base=Object.assign({area:k==='kimono'?'kiyomizu':'osaka',loc:null,stay:k==='kimono'?60:0},x.base||{});if(k==='casual'&&!(d.v>=2)&&s.days[k].base.area==='station'&&!s.days[k].base.loc)s.days[k].base.area='osaka';s.days[k].stops=Array.isArray(x.stops)?x.stops.filter(t=>t&&t.p):[]}});
  s.custom=d.custom||{};s.memo=d.memo||{};s.loc=d.loc||{};return s}
 
 let ST=defaults(),api={},root=null,day='kimono',map=null,layer=null,pick=null,saveT=null,db=null,lastSaved='',fitNext=true,poolOpen=false;
@@ -411,10 +422,10 @@ function legHTML(l,from,to,key){if(!l)return '';
   '<b>'+dur(l.min)+'</b><span>'+(l.dist<1?Math.round(l.dist*100)*10+'m':l.dist.toFixed(1)+'km')+(l.manual?' · 직접 입력':'')+'</span></div>'+
   (l.how?'<div>'+esc(l.how)+'</div>':'')+
   '<div class="ky-row"><button class="mini" data-ky="legMin" data-i="'+key+'">시간 고치기</button><a target="_blank" rel="noopener" href="'+gmDir(from,to,l.mode)+'">구글맵 길찾기 ↗</a>'+
-  (l.mode==='walk'?'<span>버스·전철이면 약 '+l.tm+'분</span>':'<span>걸으면 약 '+dur(l.wm)+'</span>')+'</div></div>'}
+  (l.mode==='walk'?'<span>버스·전철이면 약 '+l.tm+'분</span>':(l.wm<=90?'<span>걸으면 약 '+dur(l.wm)+'</span>':''))+'</div></div>'}
 
-function renderList(){const D=ST.days[day],c=calc(day),kim=day==='kimono',n=D.stops.length;let num=0;
- let h='<div class="ky-stop base"><div><div class="ky-time">'+fmt(c.start)+(D.base.stay?' – '+fmt(c.depart):'')+'</div><div class="ky-name">'+DAYS[day].base+' · '+esc(D.base.loc?'지도에 찍은 위치':AREAS[D.base.area].n)+'</div>'+(kim?'<div class="ky-ctl">옷 고르기 · 착장 · 헤어 '+(D.base.stay||0)+'분</div>':'')+'</div></div>';
+function renderList(){const D=ST.days[day],c=calc(day),kim=day==='kimono',n=D.stops.length;let num=0;const hm=leg(AREAS.osaka,baseLoc(day),false,'transit',null);
+ let h='<div class="ky-stop base"><div><div class="ky-time">'+fmt(c.start)+(D.base.stay?' – '+fmt(c.depart):'')+'</div><div class="ky-name">'+DAYS[day].base+' · '+esc(D.base.loc?'지도에 찍은 위치':AREAS[D.base.area].n)+'</div>'+(kim?'<div class="ky-ctl">옷 고르기 · 착장 · 헤어 '+(D.base.stay||0)+'분</div><div class="ky-ctl">오사카 숙소에서 약 '+dur(hm.min)+' — <b style="color:var(--ink)">'+fmt(c.start-hm.min-10)+'쯤 숙소 출발</b></div><div style="font-size:12px;color:var(--ink-2)">'+esc(hm.how)+'</div>':'')+'</div></div>';
  c.rows.forEach(r=>{const s=r.s,i=r.i;h+=legHTML(r.leg,r.from,r.to,i);
   const ctl='<div class="ky-ctl"><span class="ky-step">머무는 시간 <button class="ky-ib" data-ky="stay" data-i="'+i+'" data-v="-10" aria-label="10분 줄이기">−</button><b>'+(s.stay||0)+'분</b><button class="ky-ib" data-ky="stay" data-i="'+i+'" data-v="10" aria-label="10분 늘리기">+</button></span>'+
    '<button class="ky-ib" data-ky="up" data-i="'+i+'"'+(i===0?' disabled':'')+' aria-label="위로">↑</button><button class="ky-ib" data-ky="down" data-i="'+i+'"'+(i===n-1?' disabled':'')+' aria-label="아래로">↓</button>'+
@@ -427,7 +438,7 @@ function renderList(){const D=ST.days[day],c=calc(day),kim=day==='kimono',n=D.st
    '<div class="ky-bad">'+(p.rsv.lv===2?'<span class="ky-tag rsv">예약 필수 확인</span>':p.rsv.lv===1?'<span class="ky-tag">예약 추천/확인</span>':'')+(p.photo.lv>=1&&!p.custom?'<span class="ky-tag">촬영 주의 있음</span>':'')+r.warn.map(w=>'<span class="ky-tag warn">'+esc(w)+'</span>').join('')+'</div>'+
    (memo?'<div style="font-size:13px;color:var(--ink-2);white-space:pre-wrap">✎ '+esc(memo)+'</div>':'')+ctl+'</div></div>'});
  if(c.back){h+=legHTML(c.back,c.backFrom,baseLoc(day),'back');
-  h+='<div class="ky-stop base"><div><div class="ky-time">'+fmt(c.finish)+'</div><div class="ky-name">'+DAYS[day].back+(kim&&D.end?' (마감 '+esc(D.end)+')':'')+'</div></div></div>'}
+  h+='<div class="ky-stop base"><div><div class="ky-time">'+fmt(c.finish)+'</div><div class="ky-name">'+DAYS[day].back+(kim&&D.end?' (마감 '+esc(D.end)+')':'')+'</div>'+(kim?'<div class="ky-ctl">반납 후 오사카 숙소 도착 약 '+fmt(c.finish+hm.min)+'</div>':'')+'</div></div>'}
  h+='<div class="ky-row" style="margin-top:12px;justify-content:center"><button class="btn" data-ky="openPool">+ 장소 넣기</button><button class="btn ghost" data-ky="addCustom">+ 새 장소 직접 추가</button><button class="btn ghost" data-ky="addFree">+ 식사·휴식 시간</button></div>';
  $('#kyList').innerHTML=h;
  let a='';if(c.over!=null){a=c.over>0?'<div class="ky-alert">'+(kim?'반납 시간':'돌아올 시간')+'('+esc(D.end)+')보다 <b>'+dur(c.over)+'</b> 늦어요. 장소를 빼거나 머무는 시간을 줄여보세요.</div>':'<div class="ky-alert ok">'+(kim?'반납':'돌아올 시간')+'까지 <b>'+dur(-c.over)+'</b> 여유가 있어요.'+(kim&&-c.over>=90?' 한 곳 더 넣어도 돼요.':'')+'</div>'}
@@ -466,7 +477,7 @@ function ensureMap(){if(map||mapLoading)return;mapLoading=true;
  document.head.appendChild(js)}
 function drawMap(){if(!map)return;const L=window.L;layer.clearLayers();map.invalidateSize();
  const c=calc(day),pts=[];const icon=(cls,txt)=>L.divIcon({className:'',html:'<div class="ky-pin '+cls+'">'+txt+'</div>',iconSize:[26,26],iconAnchor:[13,13]});
- const bl=baseLoc(day);L.marker([bl.lat,bl.lng],{icon:icon('base',day==='kimono'?'着':'宿'),zIndexOffset:500}).bindPopup('<div class="ky-pop"><b>'+DAYS[day].base+'</b></div>').addTo(layer);pts.push([bl.lat,bl.lng]);
+ const bl=baseLoc(day);L.marker([bl.lat,bl.lng],{icon:icon('base',day==='kimono'?'着':'宿'),zIndexOffset:500}).bindPopup('<div class="ky-pop"><b>'+DAYS[day].base+'</b></div>').addTo(layer);if(cluster(bl)!=='OS')pts.push([bl.lat,bl.lng]);
  let num=0;c.rows.forEach(r=>{if(r.s.p==='free')return;const p=place(r.s.p);if(!p)return;num++;if(!r.to)return;
   L.polyline([[r.from.lat,r.from.lng],[r.to.lat,r.to.lng]],{color:r.leg.mode==='walk'?'#9C88B3':'#B97D92',weight:3,dashArray:r.leg.mode==='walk'?null:'6 7'}).addTo(layer);
   L.marker([r.to.lat,r.to.lng],{icon:icon('',num),zIndexOffset:400}).bindPopup(popHTML(p,fmt(r.arr)+' – '+fmt(r.dep),false)).addTo(layer);pts.push([r.to.lat,r.to.lng])});
