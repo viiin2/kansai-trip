@@ -12,7 +12,7 @@ const PLACES=[
  how:'시버스 206·86번 기요미즈미치 정류장에서 도보 7분 · 게이한 기요미즈고조역 도보 20분',
  kimono:'아주 좋음 — 대여점이 제일 많은 동네라 걸어서 바로 와요. 돌계단이 미끄러우니 조리 조심.',
  tip:'10시 넘으면 사람이 급격히 늘어요. 옷 입자마자 여기부터 찍는 게 좋아요. 야사카탑 뷰는 야사카도리 아래쪽에서.'},
-{id:'kiyomizu',n:'기요미즈데라',jp:'清水寺',area:'히가시야마',lat:34.9949,lng:135.7850,ph:[],stay:70,open:'6:00',last:'17:30',
+{id:'kiyomizu',n:'기요미즈데라',jp:'清水寺',area:'히가시야마',lat:34.9949,lng:135.7850,ph:['k1.jpg','k2.jpg'],cr:'사진: Martin Falbisoner / Wikimedia Commons (CC BY-SA 4.0)',stay:70,open:'6:00',last:'17:30',
  hours:'6:00~18:00 · 야간 특별 관람 11/21~30은 21:30까지(입장 21:00)',fee:'500엔',
  rsv:{lv:0,t:'예약 필요 없음'},
  photo:{lv:1,t:'무대·경내·삼층탑은 촬영 OK. 본당 안쪽 불상은 촬영 금지이고 삼각대·셀카봉은 금지예요.'},
@@ -20,7 +20,7 @@ const PLACES=[
  how:'산넨자카 위쪽 끝에서 도보 5분 · 시버스 206·86번 기요미즈미치/고조자카 정류장에서 오르막 도보 10~15분',
  kimono:'아주 좋음 — 대여점 동네 바로 위예요. 오르막과 계단이 많아 천천히.',
  tip:'낮엔 매우 붐벼요. 산넨자카와 붙여서 가고, 사람 적은 사진은 오픈 직후가 좋아요. 야간 관람은 기모노 반납(17시) 뒤라 일상복으로.'},
-{id:'yasaka',n:'야사카 신사',jp:'八坂神社',area:'기온',lat:35.0037,lng:135.7785,ph:[],stay:30,
+{id:'yasaka',n:'야사카 신사',jp:'八坂神社',area:'기온',lat:35.0037,lng:135.7785,ph:['y1.jpg','y2.jpg'],cr:'사진: Jakub Hałun (CC BY 4.0), Kanchi1979 (CC BY-SA 4.0) / Wikimedia Commons',stay:30,
  hours:'24시간 참배 가능 (부적 판매소 9:00~17:00쯤)',fee:'무료',
  rsv:{lv:0,t:'예약 필요 없음'},
  photo:{lv:1,t:'경내 촬영 OK. 본전 안쪽과 기도·결혼식 중인 사람은 찍지 않기.'},
@@ -519,7 +519,7 @@ function openDetail(id){const p=place(id);if(!p)return;const l=locOf(id);const i
  const row=(t,v)=>v?'<div><dt>'+t+'</dt><dd>'+esc(v)+'</dd></div>':'';
  const q=encodeURIComponent((p.jp||p.n)+' 京都');
  openOv('<h3>'+esc(p.n)+(p.jp?' <small class="muted" style="font-size:13px">'+esc(p.jp)+'</small>':'')+'</h3>'+
-  (imgs.length?'<div class="ky-gal">'+imgs.join('')+'</div>':'')+
+  (imgs.length?'<div class="ky-gal">'+imgs.join('')+'</div>':'')+(p.cr?'<div class="ky-note" style="margin:0">'+esc(p.cr)+'</div>':'')+
   '<div class="ky-bad">'+(p.area?'<span class="ky-tag">'+esc(p.area)+'</span>':'')+(p.rsv.lv===2?'<span class="ky-tag rsv">예약 필수 확인</span>':p.rsv.lv===1?'<span class="ky-tag">예약 추천/확인</span>':p.custom?'':'<span class="ky-tag good">예약 불필요</span>')+'</div>'+
   '<dl class="ky-dl">'+row('특징',p.feat)+row('예약',p.rsv.t)+row('사진 촬영',p.photo.t)+row('시간',p.hours)+row('요금',p.fee)+row('가는 법',p.how)+row('기모노로 가기',p.kimono)+row('팁',p.tip)+(p.custom?row('메모',p.note):'')+'</dl>'+
   '<div class="field"><label for="kyMemo">우리 메모 · 기록</label><textarea id="kyMemo" rows="3" data-ky="memo" data-p="'+esc(id)+'" placeholder="찍고 싶은 포즈, 예약 번호, 먹을 것…">'+esc(ST.memo[id]||'')+'</textarea></div>'+
