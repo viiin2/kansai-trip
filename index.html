@@ -490,6 +490,7 @@ textarea{min-height:84px;resize:vertical}
 <nav class="tabs" aria-label="섹션">
   <div class="wrap tabrow" role="tablist">
     <button class="tab" role="tab" data-tab="plan"><span class="en">itinerary</span> <span class="ko">일정</span></button>
+    <button class="tab" role="tab" data-tab="route"><span class="en">route</span> <span class="ko">교토동선</span></button>
     <button class="tab" role="tab" data-tab="photo"><span class="en">photo</span> <span class="ko">사진</span> <span class="count" id="c-photo">0</span></button>
     <button class="tab" role="tab" data-tab="inspo"><span class="en">pins</span> <span class="ko">핀</span> <span class="count" id="c-inspo">0</span></button>
     <button class="tab" role="tab" data-tab="outfit"><span class="en">outfit</span> <span class="ko">코디</span> <span class="count" id="c-outfit">0</span></button>
@@ -503,6 +504,7 @@ textarea{min-height:84px;resize:vertical}
 <main class="wrap">
   <div id="conn" class="notice" hidden></div>
   <section id="p-plan" data-panel="plan"></section>
+  <section id="p-route" data-panel="route" hidden></section>
   <section id="p-photo" data-panel="photo" hidden></section>
   <section id="p-inspo" data-panel="inspo" hidden></section>
   <section id="p-outfit" data-panel="outfit" hidden></section>
@@ -516,6 +518,7 @@ textarea{min-height:84px;resize:vertical}
 <div id="lbRoot"></div>
 <div id="toastRoot"></div>
 
+<script src="kyoto.js?v=1"></script>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {getAuth,signInAnonymously} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -558,14 +561,14 @@ $('#track').innerHTML=days.map((x,i)=>'<li class="'+(i<k?'done':i===k?'now':'')+
 
 /* tabs */
 function setTab(t){UI.tab=t;document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===t));
-document.querySelectorAll('[data-panel]').forEach(p=>p.hidden=p.dataset.panel!==t);store('tab',t)}
+document.querySelectorAll('[data-panel]').forEach(p=>p.hidden=p.dataset.panel!==t);store('tab',t);if(t==='route'&&window.KyotoRoute)setTimeout(()=>KyotoRoute.refresh(),60)}
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{setTab(b.dataset.tab);
   const nav=document.querySelector('nav.tabs');const m=document.querySelector('main');const mob=window.matchMedia('(max-width:640px)').matches;
   const off=mob?0:nav.offsetHeight;const y=m.getBoundingClientRect().top+window.scrollY-off;
   const smooth=!window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   window.scrollTo({top:Math.max(0,y),behavior:smooth?'smooth':'auto'});
   const row=b.parentElement;row.scrollTo({left:b.offsetLeft-(row.clientWidth-b.offsetWidth)/2,behavior:smooth?'smooth':'auto'})});
-const h=(location.hash||'').slice(1);setTab(['plan','photo','inspo','outfit','shop','ledger','notes','tips'].includes(h)?h:(store('tab')||'plan'));
+const h=(location.hash||'').slice(1);setTab(['plan','route','photo','inspo','outfit','shop','ledger','notes','tips'].includes(h)?h:(store('tab')||'plan'));
 
 const dayLabel=id=>{const d=S.days.find(x=>x.id===id);return d?d.date+' '+d.dow:''};
 const dayOpts=()=>[{v:'',l:'날짜 미정'}].concat(S.days.map(d=>({v:d.id,l:d.date+' ('+d.dow+') '+(d.title||'')})));
@@ -1092,6 +1095,7 @@ document.addEventListener('click',async e=>{
 });
 
 /* ---------- boot ---------- */
+if(window.KyotoRoute)KyotoRoute.init($('#p-route'),{toast,fitOverlay,img,upload:f=>upload(f),removeImg:id=>assets&&assets.delete(id).catch(()=>{})});
 renderAll();
 renderCover();
 (async function boot(){
@@ -1108,6 +1112,7 @@ renderCover();
   assets={async upload(blob){const data=await toDataURL(blob);if(data.length>950000)throw {code:'too_large'};const r=await addDoc(collection(fs,'images'),{data,createdAt:Date.now()});IMGC[r.id]=data;return {id:r.id}},
     async delete(id){if(!id||/^(static|url):/.test(String(id)))return;delete IMGC[id];await deleteDoc(doc(fs,'images',id))}};
   sample=null;canWrite=true;
+  if(window.KyotoRoute)KyotoRoute.connect(db);
   /* load uploaded photos into <img data-imgid> */
   const loading=new Set();
   const hydrate=()=>document.querySelectorAll('img[data-imgid]').forEach(async el=>{const id=el.dataset.imgid;if(IMGC[id]){if(el.getAttribute('src')!==IMGC[id])el.src=IMGC[id];return}
