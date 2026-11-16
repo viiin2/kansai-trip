@@ -12,6 +12,22 @@ const PLACES=[
  how:'시버스 206·86번 기요미즈미치 정류장에서 도보 7분 · 게이한 기요미즈고조역 도보 20분',
  kimono:'아주 좋음 — 대여점이 제일 많은 동네라 걸어서 바로 와요. 돌계단이 미끄러우니 조리 조심.',
  tip:'10시 넘으면 사람이 급격히 늘어요. 옷 입자마자 여기부터 찍는 게 좋아요. 야사카탑 뷰는 야사카도리 아래쪽에서.'},
+{id:'kiyomizu',n:'기요미즈데라',jp:'清水寺',area:'히가시야마',lat:34.9949,lng:135.7850,ph:[],stay:70,open:'6:00',last:'17:30',
+ hours:'6:00~18:00 · 야간 특별 관람 11/21~30은 21:30까지(입장 21:00)',fee:'500엔',
+ rsv:{lv:0,t:'예약 필요 없음'},
+ photo:{lv:1,t:'무대·경내·삼층탑은 촬영 OK. 본당 안쪽 불상은 촬영 금지이고 삼각대·셀카봉은 금지예요.'},
+ feat:'절벽 위 나무 무대(기요미즈의 무대)로 유명한 교토 대표 절. 단풍철엔 무대 아래가 붉게 물들고, 오쿠노인 쪽에서 무대와 시내가 한 장에 담겨요.',
+ how:'산넨자카 위쪽 끝에서 도보 5분 · 시버스 206·86번 기요미즈미치/고조자카 정류장에서 오르막 도보 10~15분',
+ kimono:'아주 좋음 — 대여점 동네 바로 위예요. 오르막과 계단이 많아 천천히.',
+ tip:'낮엔 매우 붐벼요. 산넨자카와 붙여서 가고, 사람 적은 사진은 오픈 직후가 좋아요. 야간 관람은 기모노 반납(17시) 뒤라 일상복으로.'},
+{id:'yasaka',n:'야사카 신사',jp:'八坂神社',area:'기온',lat:35.0037,lng:135.7785,ph:[],stay:30,
+ hours:'24시간 참배 가능 (부적 판매소 9:00~17:00쯤)',fee:'무료',
+ rsv:{lv:0,t:'예약 필요 없음'},
+ photo:{lv:1,t:'경내 촬영 OK. 본전 안쪽과 기도·결혼식 중인 사람은 찍지 않기.'},
+ feat:'기온 거리 끝의 붉은 서쪽 누문과 등롱이 가득 달린 무대(부덴)가 상징. 밤엔 등롱에 불이 켜져요.',
+ how:'게이한 기온시조역 도보 5분 · 시버스 기온 정류장 바로',
+ kimono:'아주 좋음 — 기온 대여점에서 바로, 뒤쪽 마루야마 공원·초라쿠칸으로 이어져요.',
+ tip:'초라쿠칸 가는 길에 지나가요. 미인 기원으로 유명한 우쓰쿠시고젠샤(미용수)도 경내에 있어요.'},
 {id:'chouraku',n:'카페 초라쿠칸',jp:'長楽館',area:'히가시야마 · 마루야마 공원',lat:35.0034,lng:135.7812,ph:['a09.jpg'],stay:60,open:'11:00',last:'18:00',
  hours:'카페 11:00~18:30 (주문 마감 18:00쯤)',fee:'음료·디저트 1,500~3,000엔대',
  rsv:{lv:1,t:'일반 카페 이용은 예약 없이 줄 서서 입장. 애프터눈 티(영빈의 방)는 사전 예약제예요.'},
@@ -328,7 +344,7 @@ const CSS=`
 .ky-leg a,.ky-lk{font-size:13px}
 .ky-pool{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
 .ky-card{background:var(--sheet);border:1px solid var(--frame);display:grid;gap:6px;padding:6px 6px 8px;align-content:start}
-.ky-card .ky-ph{padding:0;border:0;background:var(--ai-soft);aspect-ratio:4/5;overflow:hidden;display:block;width:100%}
+.ky-th:empty,.ky-card .ky-ph{padding:0;border:0;background:var(--ai-soft);aspect-ratio:4/5;overflow:hidden;display:block;width:100%}
 .ky-card img{width:100%;height:100%;object-fit:cover;display:block}
 .ky-card b{font-family:var(--f-display);font-weight:400;font-size:15px;line-height:1.3}
 .ky-card small{font-size:12px;color:var(--ink-2)}
@@ -348,7 +364,7 @@ const CSS=`
 
 function init(el,a){root=el;api=a||{};
  const st=document.createElement('style');st.textContent=CSS;document.head.appendChild(st);
- root.innerHTML='<div class="panel-head"><div><div class="label">Kyoto route</div><h2>교토 이틀 동선</h2></div><p>가고 싶은 곳 16곳을 지도와 사진으로 모았어요. 추천 동선을 고른 뒤 순서·머무는 시간·장소를 마음대로 고치면 둘이 같이 저장돼요.</p></div>'+
+ root.innerHTML='<div class="panel-head"><div><div class="label">Kyoto route</div><h2>교토 이틀 동선</h2></div><p>가고 싶은 곳 18곳을 지도와 사진으로 모았어요. 추천 동선을 고른 뒤 순서·머무는 시간·장소를 마음대로 고치면 둘이 같이 저장돼요.</p></div>'+
   '<div class="ky-days" id="kyDays"></div>'+
   '<div class="ky-sec" id="kySet"></div>'+
   '<div class="ky-sec"><div class="ky-h"><h3>추천 동선 고르기</h3><span>옆으로 넘겨 보세요</span></div><div class="ky-opts" id="kyOpts"></div></div>'+
