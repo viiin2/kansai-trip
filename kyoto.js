@@ -248,11 +248,11 @@ function cluster(p){let best=null,bd=1e9;for(const k in CL){const d=hav(p,{lat:C
 
 function buildStops(opt){return opt.stops.map(([p,stay])=>p==='lunch'?{k:uid(),p:'free',name:'점심',stay,mode:'auto',min:null}:p.startsWith('free:')?{k:uid(),p:'free',name:p.slice(5),stay,mode:'auto',min:null}:{k:uid(),p,stay,mode:'auto',min:null})}
 function defaults(){return {v:2,
- days:{kimono:{start:'09:00',end:'17:00',base:{area:'kiyomizu',loc:null,stay:60},opt:'k1',stops:buildStops(OPTS.kimono[0])},
+ days:{kimono:{start:'09:00',end:'17:00',pre:[],buffer:10,base:{area:'kiyomizu',loc:null,stay:60},opt:'k1',stops:buildStops(OPTS.kimono[0])},
        casual:{start:'08:00',end:'',base:{area:'osaka',loc:null,stay:0},opt:'c2',stops:buildStops(OPTS.casual[1])}},
  custom:{},memo:{},loc:{}}}
 function normalize(d){const s=defaults();if(!d||typeof d!=='object')return s;
- ['kimono','casual'].forEach(k=>{const x=d.days&&d.days[k];if(x){s.days[k]=Object.assign(s.days[k],x);s.days[k].base=Object.assign({area:k==='kimono'?'kiyomizu':'osaka',loc:null,stay:k==='kimono'?60:0},x.base||{});if(k==='casual'&&!(d.v>=2)&&s.days[k].base.area==='station'&&!s.days[k].base.loc)s.days[k].base.area='osaka';s.days[k].stops=Array.isArray(x.stops)?x.stops.filter(t=>t&&t.p):[]}});
+ ['kimono','casual'].forEach(k=>{const x=d.days&&d.days[k];if(x){s.days[k]=Object.assign(s.days[k],x);s.days[k].base=Object.assign({area:k==='kimono'?'kiyomizu':'osaka',loc:null,stay:k==='kimono'?60:0},x.base||{});if(k==='casual'&&!(d.v>=2)&&s.days[k].base.area==='station'&&!s.days[k].base.loc)s.days[k].base.area='osaka';s.days[k].stops=Array.isArray(x.stops)?x.stops.filter(t=>t&&t.p):[];if(k==='kimono')s.days[k].pre=Array.isArray(x.pre)?x.pre.filter(t=>t&&t.p):[]}});
  s.custom=d.custom||{};s.memo=d.memo||{};s.loc=d.loc||{};return s}
 
 let ST=defaults(),api={},root=null,day='kimono',map=null,layer=null,pick=null,saveT=null,db=null,lastSaved='',fitNext=true,poolOpen=false;
@@ -417,43 +417,62 @@ function renderOpts(){const D=ST.days[day],kim=day==='kimono';let opts=OPTS[day]
    '<button class="btn'+(D.opt===o.id?' ghost':'')+'" data-ky="useOpt" data-v="'+o.id+'">'+(D.opt===o.id?'지금 이 동선이에요 (처음대로 되돌리기)':'이 동선으로 시작')+'</button></article>'}).join('')}
 
 function gmDir(a,b,mode){return 'https://www.google.com/maps/dir/?api=1&origin='+a.lat+','+a.lng+'&destination='+b.lat+','+b.lng+'&travelmode='+(mode==='walk'?'walking':'transit')}
-function legHTML(l,from,to,key){if(!l)return '';
- return '<div class="ky-leg '+l.mode+'"><div class="ky-row"><span class="ky-seg"><button data-ky="mode" data-i="'+key+'" data-v="walk" aria-pressed="'+(l.mode==='walk')+'">도보</button><button data-ky="mode" data-i="'+key+'" data-v="transit" aria-pressed="'+(l.mode==='transit')+'">버스·전철</button></span>'+
+function legHTML(l,from,to,key,ln){if(!l)return '';const LN=ln?' data-l="'+ln+'"':'';
+ return '<div class="ky-leg '+l.mode+'"><div class="ky-row"><span class="ky-seg"><button data-ky="mode"'+LN+' data-i="'+key+'" data-v="walk" aria-pressed="'+(l.mode==='walk')+'">도보</button><button data-ky="mode"'+LN+' data-i="'+key+'" data-v="transit" aria-pressed="'+(l.mode==='transit')+'">버스·전철</button></span>'+
   '<b>'+dur(l.min)+'</b><span>'+(l.dist<1?Math.round(l.dist*100)*10+'m':l.dist.toFixed(1)+'km')+(l.manual?' · 직접 입력':'')+'</span></div>'+
   (l.how?'<div>'+esc(l.how)+'</div>':'')+
-  '<div class="ky-row"><button class="mini" data-ky="legMin" data-i="'+key+'">시간 고치기</button><a target="_blank" rel="noopener" href="'+gmDir(from,to,l.mode)+'">구글맵 길찾기 ↗</a>'+
+  '<div class="ky-row"><button class="mini" data-ky="legMin"'+LN+' data-i="'+key+'">시간 고치기</button><a target="_blank" rel="noopener" href="'+gmDir(from,to,l.mode)+'">구글맵 길찾기 ↗</a>'+
   (l.mode==='walk'?'<span>버스·전철이면 약 '+l.tm+'분</span>':(l.wm<=90?'<span>걸으면 약 '+dur(l.wm)+'</span>':''))+'</div></div>'}
 
-function renderList(){const D=ST.days[day],c=calc(day),kim=day==='kimono',n=D.stops.length;let num=0;const hm=leg(AREAS.osaka,baseLoc(day),false,'transit',null);
- let h='<div class="ky-stop base"><div><div class="ky-time">'+fmt(c.start)+(D.base.stay?' – '+fmt(c.depart):'')+'</div><div class="ky-name">'+DAYS[day].base+' · '+esc(D.base.loc?'지도에 찍은 위치':AREAS[D.base.area].n)+'</div>'+(kim?'<div class="ky-ctl">옷 고르기 · 착장 · 헤어 '+(D.base.stay||0)+'분</div><div class="ky-ctl">오사카 숙소에서 약 '+dur(hm.min)+' — <b style="color:var(--ink)">'+fmt(c.start-hm.min-10)+'쯤 숙소 출발</b></div><div style="font-size:12px;color:var(--ink-2)">'+esc(hm.how)+'</div>':'')+'</div></div>';
- c.rows.forEach(r=>{const s=r.s,i=r.i;h+=legHTML(r.leg,r.from,r.to,i);
-  const ctl='<div class="ky-ctl"><span class="ky-step">머무는 시간 <button class="ky-ib" data-ky="stay" data-i="'+i+'" data-v="-10" aria-label="10분 줄이기">−</button><b>'+(s.stay||0)+'분</b><button class="ky-ib" data-ky="stay" data-i="'+i+'" data-v="10" aria-label="10분 늘리기">+</button></span>'+
-   '<button class="ky-ib" data-ky="up" data-i="'+i+'"'+(i===0?' disabled':'')+' aria-label="위로">↑</button><button class="ky-ib" data-ky="down" data-i="'+i+'"'+(i===n-1?' disabled':'')+' aria-label="아래로">↓</button>'+
-   '<button class="ky-ib" data-ky="toOther" data-i="'+i+'">'+(kim?'일상복 날로':'기모노 날로')+'</button><button class="ky-ib" data-ky="del" data-i="'+i+'">빼기</button></div>';
-  if(s.p==='free'){h+='<div class="ky-stop free"><div><div class="ky-time">'+fmt(r.arr)+' – '+fmt(r.dep)+'</div><div class="ky-name"><button data-ky="rename" data-i="'+i+'">'+esc(stopName(s))+'</button></div>'+ctl+'</div></div>';return}
-  const p=place(s.p);if(!p){h+='<div class="ky-stop free"><div><div class="ky-name">지워진 장소</div>'+ctl+'</div></div>';return}
-  num++;const t=thumb(p),memo=ST.memo[s.p];
-  h+='<div class="ky-stop"><button class="ky-th" data-ky="detail" data-p="'+esc(s.p)+'" aria-label="'+esc(p.n)+' 자세히">'+(t?'<img alt="" loading="lazy" src="'+t+'">':'')+'<i class="ky-pin">'+num+'</i></button><div>'+
-   '<div class="ky-time">'+fmt(r.arr)+' – '+fmt(r.dep)+'</div><div class="ky-name"><button data-ky="detail" data-p="'+esc(s.p)+'">'+esc(p.n)+'</button></div>'+
-   '<div class="ky-bad">'+(p.rsv.lv===2?'<span class="ky-tag rsv">예약 필수 확인</span>':p.rsv.lv===1?'<span class="ky-tag">예약 추천/확인</span>':'')+(p.photo.lv>=1&&!p.custom?'<span class="ky-tag">촬영 주의 있음</span>':'')+r.warn.map(w=>'<span class="ky-tag warn">'+esc(w)+'</span>').join('')+'</div>'+
-   (memo?'<div style="font-size:13px;color:var(--ink-2);white-space:pre-wrap">✎ '+esc(memo)+'</div>':'')+ctl+'</div></div>'});
+/* 기모노 날: 숙소 → (대여 전에 들를 곳) → 대여점. 대여 시각에서 거꾸로 계산해요. */
+function homeLoc(){return baseLoc('casual')}
+function preCalc(){const D=ST.days.kimono,rent=baseLoc('kimono');let prev=homeLoc(),total=0;const rows=[];
+ (D.pre||[]).forEach((s,i)=>{const r={s,i,leg:null,warn:[]};const l=s.p==='free'?null:locOf(s.p);
+  if(l){r.leg=leg(prev,l,false,s.mode,s.min);r.from=prev;r.to=l;prev=l;total+=r.leg.min}else if(s.p!=='free')r.warn.push('위치가 없어 이동 시간에서 빠졌어요');
+  r.off=total;total+=s.stay||0;rows.push(r)});
+ const last=leg(prev,rent,false,D.rentMode,D.rentMin!=null?D.rentMin:null);total+=last.min;
+ const buf=D.buffer!=null?D.buffer:10;let st=toMin(D.start);if(st==null)st=540;const dep=st-buf-total;
+ rows.forEach(r=>{r.arr=dep+r.off;r.dep=r.arr+(r.s.stay||0)});
+ return {rows,last,lastFrom:prev,dep,arrive:st-buf,buf,total}}
+function ctlHTML(s,i,n,ln,kim){const L=' data-l="'+ln+'" data-i="'+i+'"';
+ return '<div class="ky-ctl"><span class="ky-step">머무는 시간 <button class="ky-ib" data-ky="stay"'+L+' data-v="-10" aria-label="10분 줄이기">−</button><b>'+(s.stay||0)+'분</b><button class="ky-ib" data-ky="stay"'+L+' data-v="10" aria-label="10분 늘리기">+</button></span>'+
+  '<button class="ky-ib" data-ky="up"'+L+(i===0?' disabled':'')+' aria-label="위로">↑</button><button class="ky-ib" data-ky="down"'+L+(i===n-1?' disabled':'')+' aria-label="아래로">↓</button>'+
+  (ln==='pre'?'':'<button class="ky-ib" data-ky="toOther"'+L+'>'+(kim?'일상복 날로':'기모노 날로')+'</button>')+'<button class="ky-ib" data-ky="del"'+L+'>빼기</button></div>'}
+function cardHTML(r,n,ln,kim,num){const s=r.s,i=r.i,ctl=ctlHTML(s,i,n,ln,kim),tm='<div class="ky-time">'+fmt(r.arr)+' – '+fmt(r.dep)+'</div>';
+ if(s.p==='free')return '<div class="ky-stop free"><div>'+tm+'<div class="ky-name"><button data-ky="rename" data-l="'+ln+'" data-i="'+i+'">'+esc(stopName(s))+'</button></div>'+ctl+'</div></div>';
+ const p=place(s.p);if(!p)return '<div class="ky-stop free"><div><div class="ky-name">지워진 장소</div>'+ctl+'</div></div>';
+ const t=thumb(p),memo=ST.memo[s.p];
+ return '<div class="ky-stop"><button class="ky-th" data-ky="detail" data-p="'+esc(s.p)+'" aria-label="'+esc(p.n)+' 자세히">'+(t?'<img alt="" loading="lazy" src="'+t+'">':'')+(num?'<i class="ky-pin">'+num+'</i>':'')+'</button><div>'+
+  tm+'<div class="ky-name"><button data-ky="detail" data-p="'+esc(s.p)+'">'+esc(p.n)+'</button></div>'+
+  '<div class="ky-bad">'+(p.rsv.lv===2?'<span class="ky-tag rsv">예약 필수 확인</span>':p.rsv.lv===1?'<span class="ky-tag">예약 추천/확인</span>':'')+(p.photo.lv>=1&&!p.custom?'<span class="ky-tag">촬영 주의 있음</span>':'')+r.warn.map(w=>'<span class="ky-tag warn">'+esc(w)+'</span>').join('')+'</div>'+
+  (memo?'<div style="font-size:13px;color:var(--ink-2);white-space:pre-wrap">✎ '+esc(memo)+'</div>':'')+ctl+'</div></div>'}
+function renderList(){const D=ST.days[day],c=calc(day),kim=day==='kimono',n=D.stops.length;let num=0,h='';const hm=leg(homeLoc(),baseLoc(day),false,'transit',null);
+ if(kim){const pc=preCalc(),pn=(D.pre||[]).length;
+  h+='<div class="ky-stop base"><div><div class="ky-time">'+fmt(pc.dep)+'</div><div class="ky-name">숙소 출발</div>'+
+   '<div class="ky-ctl">대여 '+esc(D.start)+'에 맞춰 거꾸로 계산했어요 · 대여 전 총 '+dur(pc.total+pc.buf)+'</div></div></div>';
+  pc.rows.forEach(r=>{h+=legHTML(r.leg,r.from,r.to,r.i,'pre');h+=cardHTML(r,pn,'pre',kim,0)});
+  h+=legHTML(pc.last,pc.lastFrom,baseLoc('kimono'),'rent');
+  h+='<div class="ky-row" style="margin:2px 0 10px 24px"><button class="mini" data-ky="addPreFree">+ 대여 전 아침·카페 시간</button><button class="mini" data-ky="addPrePlace">+ 대여 전에 들를 장소</button>'+
+   '<span class="ky-step" style="font-size:13px;color:var(--ink-2)">미리 도착 여유 <button class="ky-ib" data-ky="buffer" data-v="-5" aria-label="5분 줄이기">−</button><b>'+pc.buf+'분</b><button class="ky-ib" data-ky="buffer" data-v="5" aria-label="5분 늘리기">+</button></span></div>'}
+ h+='<div class="ky-stop base"><div><div class="ky-time">'+fmt(c.start)+(D.base.stay?' – '+fmt(c.depart):'')+'</div><div class="ky-name">'+DAYS[day].base+' · '+esc(D.base.loc?'지도에 찍은 위치':AREAS[D.base.area].n)+'</div>'+(kim?'<div class="ky-ctl">옷 고르기 · 착장 · 헤어 '+(D.base.stay||0)+'분</div>':'')+'</div></div>';
+ c.rows.forEach(r=>{h+=legHTML(r.leg,r.from,r.to,r.i,'stops');if(r.s.p!=='free'&&place(r.s.p))num++;h+=cardHTML(r,n,'stops',kim,num)});
  if(c.back){h+=legHTML(c.back,c.backFrom,baseLoc(day),'back');
-  h+='<div class="ky-stop base"><div><div class="ky-time">'+fmt(c.finish)+'</div><div class="ky-name">'+DAYS[day].back+(kim&&D.end?' (마감 '+esc(D.end)+')':'')+'</div>'+(kim?'<div class="ky-ctl">반납 후 오사카 숙소 도착 약 '+fmt(c.finish+hm.min)+'</div>':'')+'</div></div>'}
+  h+='<div class="ky-stop base"><div><div class="ky-time">'+fmt(c.finish)+'</div><div class="ky-name">'+DAYS[day].back+(kim&&D.end?' (마감 '+esc(D.end)+')':'')+'</div>'+(kim?'<div class="ky-ctl">반납 후 숙소 도착 약 '+fmt(c.finish+hm.min)+' (이동 '+dur(hm.min)+')</div>':'')+'</div></div>'}
  h+='<div class="ky-row" style="margin-top:12px;justify-content:center"><button class="btn" data-ky="openPool">+ 장소 넣기</button><button class="btn ghost" data-ky="addCustom">+ 새 장소 직접 추가</button><button class="btn ghost" data-ky="addFree">+ 식사·휴식 시간</button></div>';
  $('#kyList').innerHTML=h;
  let a='';if(c.over!=null){a=c.over>0?'<div class="ky-alert">'+(kim?'반납 시간':'돌아올 시간')+'('+esc(D.end)+')보다 <b>'+dur(c.over)+'</b> 늦어요. 장소를 빼거나 머무는 시간을 줄여보세요.</div>':'<div class="ky-alert ok">'+(kim?'반납':'돌아올 시간')+'까지 <b>'+dur(-c.over)+'</b> 여유가 있어요.'+(kim&&-c.over>=90?' 한 곳 더 넣어도 돼요.':'')+'</div>'}
- $('#kySum').innerHTML='<div class="ky-sum"><div><small>'+(kim?'옷 입고 출발':'출발')+'</small><b>'+fmt(c.depart)+'</b></div><div><small>'+(kim?'반납 도착':'끝')+'</small><b>'+fmt(c.finish)+'</b></div><div><small>걷기</small><b>'+dur(c.walk)+'</b></div><div><small>버스·전철</small><b>'+dur(c.trans)+'</b></div></div>'+a+
-  (kim?'<div class="ky-note">11월 하순 교토는 해가 16:50쯤 져요. 기모노 걸음은 평소보다 느리게(시속 3.4km) 계산했어요.</div>':'');
+ $('#kySum').innerHTML='<div class="ky-sum"><div><small>'+(kim?'숙소 출발':'출발')+'</small><b>'+fmt(kim?preCalc().dep:c.depart)+'</b></div><div><small>'+(kim?'반납 도착':'끝')+'</small><b>'+fmt(c.finish)+'</b></div><div><small>걷기</small><b>'+dur(c.walk)+'</b></div><div><small>버스·전철</small><b>'+dur(c.trans)+'</b></div></div>'+a+
+  (kim?'<div class="ky-note">걷기·버스·전철 합계는 대여 후 교토 안에서 움직이는 시간이에요. 11월 하순 교토는 해가 16:50쯤 져요. 기모노 걸음은 평소보다 느리게(시속 3.4km) 계산했어요.</div>':'');
  $('#kyMapT').textContent=DAYS[day].n+' 지도'}
 
-const inDay=(k,id)=>ST.days[k].stops.some(s=>s.p===id);
+const inDay=(k,id)=>ST.days[k].stops.some(s=>s.p===id)||(ST.days[k].pre||[]).some(s=>s.p===id);
 function allPlaces(){return PLACES.concat(Object.keys(ST.custom).map(id=>place(id)))}
-function renderPool(){const other=day==='kimono'?'casual':'kimono';const rest=allPlaces().filter(p=>!inDay(day,p.id));
+function renderPool(){const other=day==='kimono'?'casual':'kimono';if(day!=='kimono')addTarget='';const pre=addTarget==='pre';const rest=allPlaces().filter(p=>!inDay(day,p.id));
  const left=allPlaces().filter(p=>!inDay('kimono',p.id)&&!inDay('casual',p.id)).length;
- $('#kyPool').innerHTML='<div class="ky-h"><h3>넣을 수 있는 장소</h3><span>이틀 어디에도 없는 곳 '+left+'곳</span></div>'+
+ $('#kyPool').innerHTML='<div class="ky-h"><h3>넣을 수 있는 장소</h3><span>이틀 어디에도 없는 곳 '+left+'곳</span></div>'+(pre?'<div class="ky-alert ok" style="margin-bottom:10px">기모노 대여 <b>전에</b> 들를 장소를 골라주세요. <button class="mini" data-ky="poolNormal">취소</button></div>':'')+
   (rest.length?'<div class="ky-pool">'+rest.map(p=>{const t=thumb(p);return '<div class="ky-card"><button class="ky-ph" data-ky="detail" data-p="'+esc(p.id)+'" aria-label="'+esc(p.n)+' 자세히">'+(t?'<img alt="" loading="lazy" src="'+t+'">':'')+'</button><b>'+esc(p.n)+'</b><small>'+esc(p.area||'직접 추가')+(inDay(other,p.id)?' · '+DAYS[other].n+'에 있음':'')+'</small>'+
    '<div class="ky-bad">'+(p.rsv.lv===2?'<span class="ky-tag rsv">예약 필수 확인</span>':'')+(locOf(p.id)?'':'<span class="ky-tag warn">위치 정하기 필요</span>')+'</div>'+
-   '<button class="btn ghost" style="padding:4px 10px;font-size:13px" data-ky="add" data-p="'+esc(p.id)+'">+ '+DAYS[day].n+'에 넣기</button></div>'}).join('')+'</div>':'<div class="empty">모든 장소가 이 날 동선에 들어 있어요.</div>')}
+   '<button class="btn ghost" style="padding:4px 10px;font-size:13px" data-ky="add" data-p="'+esc(p.id)+'">+ '+(pre?'대여 전에 넣기':DAYS[day].n+'에 넣기')+'</button></div>'}).join('')+'</div>':'<div class="empty">모든 장소가 이 날 동선에 들어 있어요.</div>')}
 
 function renderInfo(){const li=(p,t)=>'<li><b>'+esc(p.n)+'</b> — '+esc(t)+'</li>';
  const r2=PLACES.filter(p=>p.rsv.lv===2),r1=PLACES.filter(p=>p.rsv.lv===1),ph=PLACES.filter(p=>p.photo.lv>=1);
@@ -521,8 +540,10 @@ function openCustom(){draft=draft||{name:'',loc:null,stay:60,note:'',img:''};
 
 /* ---------- 동작 ---------- */
 function mutate(fn,keepOpt){fn();if(!keepOpt)ST.days[day].opt='';changed();render()}
-function addStop(k,id){const p=place(id);ST.days[k].stops.push({k:uid(),p:id,stay:(p&&p.stay)||60,mode:'auto',min:null});ST.days[k].opt='';fitNext=true;changed();render();api.toast&&api.toast(DAYS[k].n+'에 넣었어요')}
-async function onClick(e){const b=e.target.closest('[data-ky]');if(!b||b.tagName==='INPUT'||b.tagName==='TEXTAREA')return;const a=b.dataset.ky,D=ST.days[day],i=+b.dataset.i,id=b.dataset.p;
+let addTarget='';
+function addStop(k,id){const p=place(id),st={k:uid(),p:id,stay:(p&&p.stay)||60,mode:'auto',min:null};if(addTarget==='pre'&&k==='kimono'){(ST.days.kimono.pre||(ST.days.kimono.pre=[])).push(st);ST.days.kimono.rentMin=null;ST.days.kimono.rentMode=null;addTarget='';changed();render();api.toast&&api.toast('대여 전 일정에 넣었어요');$('#kyList').scrollIntoView({block:'start',behavior:'smooth'});return}
+ ST.days[k].stops.push(st);ST.days[k].opt='';fitNext=true;changed();render();api.toast&&api.toast(DAYS[k].n+'에 넣었어요')}
+async function onClick(e){const b=e.target.closest('[data-ky]');if(!b||b.tagName==='INPUT'||b.tagName==='TEXTAREA')return;const a=b.dataset.ky,D=ST.days[day],i=+b.dataset.i,id=b.dataset.p,isPre=b.dataset.l==='pre',LS=isPre?(D.pre||(D.pre=[])):D.stops,keep=isPre;
  if(a==='day'){day=b.dataset.v;try{localStorage.setItem('kyDay',day)}catch(_){}fitNext=true;render()}
  else if(a==='area')mutate(()=>{D.base.area=b.dataset.v;D.base.loc=null;fitNext=true},true);
  else if(a==='pickBase')startPick(day==='kimono'?'기모노 대여점':'숙소',ll=>mutate(()=>{D.base.loc=ll;fitNext=true},true));
@@ -530,14 +551,18 @@ async function onClick(e){const b=e.target.closest('[data-ky]');if(!b||b.tagName
  else if(a==='baseStay')mutate(()=>{D.base.stay=Math.max(0,(D.base.stay||0)+(+b.dataset.v))},true);
  else if(a==='useOpt'){const o=OPTS[day].find(x=>x.id===b.dataset.v);if(!o)return;if(D.opt!==o.id&&D.stops.length&&!D.opt&&!confirm('지금 고친 '+DAYS[day].n+' 동선을 “'+o.n+'”(으)로 바꿀까요?'))return;
   mutate(()=>{D.stops=buildStops(o);D.opt=o.id;D.backMin=null;D.backMode=null;fitNext=true},true);$('#kyMapT').scrollIntoView({block:'start',behavior:'smooth'})}
- else if(a==='stay')mutate(()=>{D.stops[i].stay=Math.max(0,(D.stops[i].stay||0)+(+b.dataset.v))});
- else if(a==='up'||a==='down'){const j=a==='up'?i-1:i+1;if(j<0||j>=D.stops.length)return;mutate(()=>{const t=D.stops[i];D.stops[i]=D.stops[j];D.stops[j]=t;[D.stops[i],D.stops[j]].forEach(s=>{s.min=null;s.mode='auto'});D.backMin=null;D.backMode=null})}
- else if(a==='del')mutate(()=>{D.stops.splice(i,1);const n=D.stops[i];if(n){n.min=null;n.mode='auto'}D.backMin=null;D.backMode=null;fitNext=true});
- else if(a==='toOther'){const o=day==='kimono'?'casual':'kimono';mutate(()=>{const s=D.stops.splice(i,1)[0];s.min=null;s.mode='auto';ST.days[o].stops.push(s);ST.days[o].opt='';fitNext=true});api.toast&&api.toast(DAYS[o].n+' 맨 뒤로 옮겼어요')}
- else if(a==='rename'){const s=D.stops[i];const t=prompt('이름 (예: 점심, 카페 휴식)',s.name||'');if(t!=null)mutate(()=>{s.name=t.trim().slice(0,30)||'자유 일정'})}
- else if(a==='mode')mutate(()=>{if(b.dataset.i==='back'){D.backMode=b.dataset.v;D.backMin=null}else{D.stops[i].mode=b.dataset.v;D.stops[i].min=null}});
- else if(a==='legMin'){const back=b.dataset.i==='back';const cur=back?D.backMin:D.stops[i].min;const t=prompt('이동 시간을 분으로 적어주세요.\n구글맵에서 본 실제 시간을 넣으면 정확해져요. 비우면 자동 계산으로 돌아가요.',cur!=null?cur:'');if(t==null)return;const v=t.trim()===''?null:Math.max(0,Math.round(Number(t)));if(v!==null&&isNaN(v))return;mutate(()=>{if(back)D.backMin=v;else D.stops[i].min=v})}
- else if(a==='openPool'){$('#kyPool').scrollIntoView({block:'start',behavior:'smooth'})}
+ else if(a==='stay')mutate(()=>{LS[i].stay=Math.max(0,(LS[i].stay||0)+(+b.dataset.v))},keep);
+ else if(a==='up'||a==='down'){const j=a==='up'?i-1:i+1;if(j<0||j>=LS.length)return;mutate(()=>{const t=LS[i];LS[i]=LS[j];LS[j]=t;[LS[i],LS[j]].forEach(s=>{s.min=null;s.mode='auto'});if(isPre){D.rentMin=null;D.rentMode=null}else{D.backMin=null;D.backMode=null}},keep)}
+ else if(a==='del')mutate(()=>{LS.splice(i,1);const n=LS[i];if(n){n.min=null;n.mode='auto'}if(isPre){D.rentMin=null;D.rentMode=null}else{D.backMin=null;D.backMode=null}fitNext=true},keep);
+ else if(a==='toOther'){const o=day==='kimono'?'casual':'kimono';mutate(()=>{const s=LS.splice(i,1)[0];s.min=null;s.mode='auto';ST.days[o].stops.push(s);ST.days[o].opt='';fitNext=true});api.toast&&api.toast(DAYS[o].n+' 맨 뒤로 옮겼어요')}
+ else if(a==='rename'){const s=LS[i];const t=prompt('이름 (예: 점심, 카페 휴식)',s.name||'');if(t!=null)mutate(()=>{s.name=t.trim().slice(0,30)||'자유 일정'},keep)}
+ else if(a==='mode')mutate(()=>{const k=b.dataset.i;if(k==='back'){D.backMode=b.dataset.v;D.backMin=null}else if(k==='rent'){D.rentMode=b.dataset.v;D.rentMin=null}else{LS[i].mode=b.dataset.v;LS[i].min=null}},keep||b.dataset.i==='rent');
+ else if(a==='legMin'){const back=b.dataset.i==='back',rent=b.dataset.i==='rent';const cur=back?D.backMin:rent?D.rentMin:LS[i].min;const t=prompt('이동 시간을 분으로 적어주세요.\n구글맵에서 본 실제 시간을 넣으면 정확해져요. 비우면 자동 계산으로 돌아가요.',cur!=null?cur:'');if(t==null)return;const v=t.trim()===''?null:Math.max(0,Math.round(Number(t)));if(v!==null&&isNaN(v))return;mutate(()=>{if(back)D.backMin=v;else if(rent)D.rentMin=v;else LS[i].min=v},keep||rent)}
+ else if(a==='buffer')mutate(()=>{D.buffer=Math.max(0,(D.buffer!=null?D.buffer:10)+(+b.dataset.v))},true);
+ else if(a==='addPreFree')mutate(()=>{(D.pre||(D.pre=[])).push({k:uid(),p:'free',name:'아침 식사',stay:30,mode:'auto',min:null})},true);
+ else if(a==='addPrePlace'){addTarget='pre';renderPool();$('#kyPool').scrollIntoView({block:'start',behavior:'smooth'})}
+ else if(a==='poolNormal'){addTarget='';renderPool()}
+ else if(a==='openPool'){addTarget='';renderPool();$('#kyPool').scrollIntoView({block:'start',behavior:'smooth'})}
  else if(a==='addFree')mutate(()=>{D.stops.push({k:uid(),p:'free',name:'식사·휴식',stay:60,mode:'auto',min:null})});
  else if(a==='add'){addStop(day,id);map&&map.closePopup()}
  else if(a==='addTo'){addStop(b.dataset.d,id);closeOv()}
